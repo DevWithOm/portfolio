@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Projects — Pokémon in Om Vyas's collection of web development projects.">
+    <title>Om Vyas | Projects</title>
+    <link rel="icon" type="image/png" href="assets/pokeball_favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="transitions.css">
+</head>
+<body data-page="projects">
+
+    <div id="page-transition" class="page-transition" aria-hidden="true">
+        <div class="transition-pokeball-icon"></div>
+    </div>
+    <div id="particles-container" aria-hidden="true"></div>
+
+    <nav id="main-nav">
+        <a href="index.html" data-page="home" class="nav-logo">
+            <div class="pokeball-icon-small"></div>
+            <span>OM.DEV</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html" data-page="home">Home</a></li>
+            <li><a href="about.html" data-page="about">About</a></li>
+            <li><a href="skills.html" data-page="skills">Skills</a></li>
+            <li><a href="projects.html" data-page="projects">Projects</a></li>
+            <li><a href="journey.html" data-page="journey">Journey</a></li>
+            <li><a href="contact.html" data-page="contact">Contact</a></li>
+        </ul>
+        <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <main id="page-content">
+        <section id="projects" class="section page-section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="pokeball-icon-small"></div>
+                    <h2>Projects</h2>
+                </div>
+                <p class="section-subtitle">Pokémon in My Collection</p>
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <div class="card-shine"></div>
+                        <div class="project-card-header">
+                            <span class="card-hp">HP <strong>100</strong></span>
+                            <span class="card-type-icon type-normal-bg">📄</span>
+                        </div>
+                        <div class="project-card-image">
+                            <div class="project-icon">🌐</div>
+                        </div>
+                        <h3 class="project-name">Portfolio Website</h3>
+                        <p class="project-desc">A personal portfolio crafted with pure HTML — the first step in my web
+                            dev journey. Simple, clean, and a launching pad for greater things.</p>
+                        <div class="project-moves">
+                            <span class="move">HTML</span>
+                        </div>
+                        <div class="project-card-footer">
+                            <span class="weakness">Next evolution: CSS & JS ✨</span>
+                        </div>
+                    </div>
+
+                    <div class="project-card coming-soon-card">
+                        <div class="card-shine"></div>
+                        <div class="project-card-header">
+                            <span class="card-hp">HP <strong>???</strong></span>
+                            <span class="card-type-icon type-electric-bg">⚡</span>
+                        </div>
+                        <div class="project-card-image">
+                            <div class="project-icon">🥚</div>
+                        </div>
+                        <h3 class="project-name">Coming Soon...</h3>
+                        <p class="project-desc">A mysterious project egg is about to hatch! Stay tuned for more exciting
+                            projects as the journey continues.</p>
+                        <div class="project-moves">
+                            <span class="move">???</span>
+                        </div>
+                        <div class="project-card-footer">
+                            <span class="weakness">What will it be? 🤔</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="main-footer">
+        <div class="footer-pokeball-divider">
+            <div class="divider-line"></div>
+            <div class="pokeball-css small"></div>
+            <div class="divider-line"></div>
+        </div>
+        <p class="footer-text">© 2026 Om Vyas — Gotta Code 'Em All!</p>
+        <p class="footer-sub">Built with ❤️ and a love for Pokémon</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="router.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+/* ============================================
+   PAGE TRANSITIONS — POKÉBALL WIPE
+   ============================================ */
+
+/* --- Transition Overlay --- */
+.page-transition {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(
+        to bottom,
+        var(--poke-red) 48%,
+        #333 48%,
+        #333 52%,
+        #f0f0f0 52%
+    );
+    clip-path: circle(0% at 50% 50%);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: clip-path;
+}
+
+/* Pokéball icon in center during transition */
+.transition-pokeball-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 4px solid #333;
+    background: linear-gradient(to bottom, var(--poke-red) 46%, #333 46%, #333 54%, #fff 54%);
+    position: relative;
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+    transition: opacity 0.2s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.transition-pokeball-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    border: 4px solid #333;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+/* --- Covering State (circle expands) --- */
+.page-transition.is-covering {
+    animation: pokeWipeCover 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: all;
+}
+
+.page-transition.is-covering .transition-pokeball-icon {
+    opacity: 1;
+    transform: scale(1) rotate(360deg);
+    transition-delay: 0.2s;
+}
+
+/* --- Revealing State (circle shrinks) --- */
+.page-transition.is-revealing {
+    animation: pokeWipeReveal 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.page-transition.is-revealing .transition-pokeball-icon {
+    opacity: 0;
+    transform: scale(0) rotate(-180deg);
+    transition-delay: 0s;
+    transition-duration: 0.15s;
+}
+
+/* --- Keyframes --- */
+@keyframes pokeWipeCover {
+    0%   { clip-path: circle(0% at var(--tx, 50%) var(--ty, 50%)); }
+    100% { clip-path: circle(150% at var(--tx, 50%) var(--ty, 50%)); }
+}
+
+@keyframes pokeWipeReveal {
+    0%   { clip-path: circle(150% at var(--tx, 50%) var(--ty, 50%)); }
+    100% { clip-path: circle(0% at var(--tx, 50%) var(--ty, 50%)); }
+}
+
+/* --- Initial Page Load Fade --- */
+main#page-content {
+    animation: initialFadeIn 0.4s ease both;
+}
+
+@keyframes initialFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Active Nav Link --- */
+.nav-links a.active {
+    color: var(--poke-yellow) !important;
+}
+
+.nav-links a.active::after {
+    width: 100% !important;
+}

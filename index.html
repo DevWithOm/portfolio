@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Om Vyas — Aspiring Web Developer & Pokémon Trainer. Portfolio showcasing skills, projects, and journey.">
+    <meta property="og:title" content="Om Vyas | Pokémon Trainer Portfolio">
+    <meta property="og:description"
+        content="Aspiring Web Developer on a quest to catch 'em all — skills, projects, and more.">
+    <title>Om Vyas | Trainer Portfolio</title>
+    <link rel="icon" type="image/png" href="assets/pokeball_favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="transitions.css">
+</head>
+
+<body data-page="home">
+
+    <!-- Page Transition Overlay -->
+    <div id="page-transition" class="page-transition" aria-hidden="true">
+        <div class="transition-pokeball-icon"></div>
+    </div>
+
+    <!-- Floating Pokéball Particles -->
+    <div id="particles-container" aria-hidden="true"></div>
+
+    <!-- Navigation -->
+    <nav id="main-nav">
+        <a href="index.html" data-page="home" class="nav-logo">
+            <div class="pokeball-icon-small"></div>
+            <span>OM.DEV</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html" data-page="home">Home</a></li>
+            <li><a href="about.html" data-page="about">About</a></li>
+            <li><a href="skills.html" data-page="skills">Skills</a></li>
+            <li><a href="projects.html" data-page="projects">Projects</a></li>
+            <li><a href="journey.html" data-page="journey">Journey</a></li>
+            <li><a href="contact.html" data-page="contact">Contact</a></li>
+        </ul>
+        <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Hero Section — Trainer Card -->
+    <main id="page-content">
+        <header id="hero" class="section hero-section">
+            <div class="hero-content">
+                <div class="trainer-card">
+                    <div class="trainer-card-header">
+                        <div class="pokeball-deco"></div>
+                        <span class="card-label">TRAINER CARD</span>
+                        <div class="card-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                    </div>
+                    <div class="trainer-card-body">
+                        <div class="trainer-avatar-wrap">
+                            <img src="assets/pokemon_avatar.png" alt="Om Vyas — Portfolio Photo"
+                                class="trainer-avatar" id="trainer-avatar">
+                            <div class="avatar-glow"></div>
+                        </div>
+                        <div class="trainer-info">
+                            <h1 class="trainer-name">Om Vyas</h1>
+                            <p class="trainer-title" id="typewriter-target" aria-live="polite" aria-label="Role titles"></p>
+                            <p class="trainer-subtitle">First-Year Engineering Student</p>
+                            <div class="trainer-stats">
+                                <div class="stat">
+                                    <span class="stat-value">4+</span>
+                                    <span class="stat-label">Skills</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-value">1</span>
+                                    <span class="stat-label">Projects</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-value">∞</span>
+                                    <span class="stat-label">Potential</span>
+                                </div>
+                            </div>
+                            <a href="contact.html" data-page="contact" class="cta-btn" id="cta-choose">
+                                <div class="pokeball-icon-small"></div>
+                                I Choose You!
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Explore Navigation -->
+                <div class="explore-section">
+                    <p class="explore-title">EXPLORE</p>
+                    <div class="explore-grid">
+                        <a href="about.html" data-page="about" class="explore-card">
+                            <span class="explore-icon">📱</span>
+                            <span class="explore-label">Pokédex</span>
+                        </a>
+                        <a href="skills.html" data-page="skills" class="explore-card">
+                            <span class="explore-icon">⚡</span>
+                            <span class="explore-label">Moves</span>
+                        </a>
+                        <a href="projects.html" data-page="projects" class="explore-card">
+                            <span class="explore-icon">🎴</span>
+                            <span class="explore-label">Collection</span>
+                        </a>
+                        <a href="journey.html" data-page="journey" class="explore-card">
+                            <span class="explore-icon">🗺️</span>
+                            <span class="explore-label">Journey</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </main>
+
+    <!-- Footer -->
+    <footer id="main-footer">
+        <div class="footer-pokeball-divider">
+            <div class="divider-line"></div>
+            <div class="pokeball-css small"></div>
+            <div class="divider-line"></div>
+        </div>
+        <p class="footer-text">© 2026 Om Vyas — Gotta Code 'Em All!</p>
+        <p class="footer-sub">Built with ❤️ and a love for Pokémon</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="router.js"></script>
+</body>
+
+</html>
