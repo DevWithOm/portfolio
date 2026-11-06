@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --city-void: #07090D;
+    --city-carbon: #0D1117;
+    --city-steel: #1A222D;
+    --city-concrete: #283341;
+    --signal-yellow: #FCEE0A;
+    --neon-cyan: #00E5FF;
+    --neon-magenta: #FF2E88;
+    --warning-red: #FF4B4B;
+    --text-primary: #F4F5F7;
+    --text-secondary: #94A3B8;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: #07090D;
+    color: #F4F5F7;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #07090D;
+    color: #F4F5F7;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: #FCEE0A;
+    color: #07090D;
+  }
+}
+
+/* Custom Cyberpunk Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #07090D;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1A222D;
+  border-radius: 0px;
+  border: 1px solid #00E5FF;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FCEE0A;
+}
+
+/* Chamfered Cyberpunk Geometry Classes */
+.cyber-card {
+  background: rgba(13, 17, 23, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid #1A222D;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.cyber-card-yellow {
+  border-color: #FCEE0A;
+  box-shadow: 0 0 25px rgba(252, 238, 10, 0.25);
+}
+
+.cyber-card-cyan {
+  border-color: #00E5FF;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.25);
+}
+
+.cyber-card-magenta {
+  border-color: #FF2E88;
+  box-shadow: 0 0 25px rgba(255, 46, 136, 0.25);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.pgo-reduced-motion * {
+  animation: none !important;
+  transition: none !important;
+}

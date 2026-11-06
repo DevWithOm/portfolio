@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vscode
+.DS_Store
+backup_pre_upgrade_src
+legacy_pokemon_archive
+legacy_v1
+
