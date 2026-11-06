@@ -89,9 +89,9 @@ export const OPERATOR_PROFILE = {
   osVersion: 'PORTFOLIO_OS v2.0 // NIGHT_CITY_NET',
   avatarImage: '/assets/cyber_netrunner_avatar.svg',
   kpis: [
-    { label: 'Verified Honors', value: '4+' },
+    { label: 'Major Honors', value: '3' },
     { label: 'Flagship Projects', value: '6' },
-    { label: 'Tech Skills', value: '21' },
+    { label: 'Reputation Archive', value: '7' },
     { label: 'Google SC (Global)', value: 'Top 106' }
   ],
   links: {

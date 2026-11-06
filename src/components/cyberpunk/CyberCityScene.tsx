@@ -157,27 +157,42 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     // 7. Foreground: Rooftop Terrace & True Planar Reflector
     const terraceGroup = new THREE.Group();
 
-    // Structural Base Deck
+    // Structural Base Deck with Localized Puddle Boundaries (Inspired by Reference Image 5)
     const platformGeo = trackGeo(new THREE.BoxGeometry(32, 1.2, 22));
     const asphaltCanvas = document.createElement('canvas');
     asphaltCanvas.width = 1024;
     asphaltCanvas.height = 1024;
     const aCtx = asphaltCanvas.getContext('2d')!;
-    aCtx.fillStyle = '#0b0f17';
+    
+    // Gritty macro gravel concrete base
+    aCtx.fillStyle = '#090D15';
     aCtx.fillRect(0, 0, 1024, 1024);
 
-    // Surface grain and realistic puddle boundaries
-    for (let i = 0; i < 400; i++) {
-      aCtx.fillStyle = Math.random() > 0.5 ? '#111724' : '#070a10';
-      aCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 4 + Math.random() * 8, 4 + Math.random() * 8);
+    // Realistic aggregate gravel grain and surface wear
+    for (let i = 0; i < 600; i++) {
+      aCtx.fillStyle = Math.random() > 0.5 ? '#141B26' : '#06080D';
+      aCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 3 + Math.random() * 6, 3 + Math.random() * 6);
     }
-    aCtx.fillStyle = '#05070c';
+
+    // Localized natural puddle pools with organic curved boundaries
+    aCtx.fillStyle = '#04060A'; // Deep water pool base
     aCtx.beginPath();
-    aCtx.ellipse(512, 620, 360, 190, 0.08, 0, Math.PI * 2);
+    aCtx.moveTo(420, 480);
+    aCtx.bezierCurveTo(340, 520, 360, 680, 520, 740);
+    aCtx.bezierCurveTo(680, 800, 840, 720, 880, 600);
+    aCtx.bezierCurveTo(920, 480, 780, 420, 620, 440);
+    aCtx.closePath();
     aCtx.fill();
+
+    // Secondary localized puddle lobe
     aCtx.beginPath();
-    aCtx.ellipse(280, 320, 240, 130, -0.15, 0, Math.PI * 2);
+    aCtx.ellipse(280, 420, 140, 80, -0.2, 0, Math.PI * 2);
     aCtx.fill();
+
+    // Subtle wet asphalt gradient rim around puddles
+    aCtx.strokeStyle = '#101722';
+    aCtx.lineWidth = 14;
+    aCtx.stroke();
 
     const asphaltTex = trackTex(new THREE.CanvasTexture(asphaltCanvas));
     asphaltTex.wrapS = THREE.RepeatWrapping;
@@ -185,8 +200,8 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     asphaltTex.repeat.set(2, 2);
 
     const platformMat = trackMat(new THREE.MeshStandardMaterial({
-      color: 0x0D121B,
-      roughness: 0.35,
+      color: 0x0B0F17,
+      roughness: 0.38,
       metalness: 0.55,
       map: asphaltTex
     }));
@@ -195,17 +210,17 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     platform.receiveShadow = true;
     terraceGroup.add(platform);
 
-    // Real Planar Reflector for Puddles (Cinematic & Balanced tiers)
+    // Believable Localized Planar Reflector for Puddles (Positioned over main pool)
     if (qualityTier !== 'performance') {
-      const reflectorGeo = trackGeo(new THREE.PlaneGeometry(24, 14));
+      const reflectorGeo = trackGeo(new THREE.PlaneGeometry(16, 9));
       const reflectorSize = qualityTier === 'cinematic' ? 512 : 256;
       const groundReflector = new Reflector(reflectorGeo, {
         clipBias: 0.003,
         textureWidth: reflectorSize,
         textureHeight: reflectorSize,
-        color: 0x667788
+        color: 0x556677
       });
-      groundReflector.position.set(0, 0.02, 5.5);
+      groundReflector.position.set(2.0, 0.02, 5.2);
       groundReflector.rotation.x = -Math.PI / 2;
       terraceGroup.add(groundReflector);
     }
@@ -222,7 +237,7 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     parapet.receiveShadow = true;
     terraceGroup.add(parapet);
 
-    // Yellow Hazard Caution Stripes
+    // Yellow Hazard Caution Stripes along coping
     const hazardCanvas = document.createElement('canvas');
     hazardCanvas.width = 512;
     hazardCanvas.height = 32;
@@ -303,91 +318,109 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
 
     scene.add(terraceGroup);
 
-    // 8. Hero Cyber-Netrunner Operative (Compound Contoured Anatomical Mesh)
+    // 8. Original Hero Cyber-Netrunner Operative (Articulated Tactical Chassis)
+    // Inspired by turn-around concept art: Tactical yellow jacket, red cyber-helmet, leg harness
     const operativeGroup = new THREE.Group();
 
-    // David Martinez's iconic yellow Cyberpunk Edgerunners Jacket!
+    // High-spec PBR materials
     const jacketMat = trackMat(new THREE.MeshStandardMaterial({ 
-      color: 0xFCEE0A, 
-      roughness: 0.38, 
-      metalness: 0.12 
+      color: 0xF5CE13, 
+      roughness: 0.35, 
+      metalness: 0.15 
     }));
-    const vestMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x090D14, roughness: 0.7, metalness: 0.2 }));
-    const pantsMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0D1117, roughness: 0.65 }));
-    const skinMat = trackMat(new THREE.MeshStandardMaterial({ color: 0xD4A373, roughness: 0.6 }));
-    const bootMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x07090D, roughness: 0.4, metalness: 0.6 }));
+    const jacketTrimMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0A0D14, roughness: 0.8, metalness: 0.1 }));
+    const vestMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x080C14, roughness: 0.7, metalness: 0.3 }));
+    const pantsMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x090C12, roughness: 0.65 }));
+    const helmetMat = trackMat(new THREE.MeshStandardMaterial({ color: 0xDE1A35, roughness: 0.25, metalness: 0.4 }));
+    const bootMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x06080D, roughness: 0.35, metalness: 0.65 }));
     const cyberGlowCyan = trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF }));
     const cyberGlowYellow = trackMat(new THREE.MeshBasicMaterial({ color: 0xFCEE0A }));
+    const cyberGlowAmber = trackMat(new THREE.MeshBasicMaterial({ color: 0xF59E0B }));
 
-    // Torso in bright yellow jacket
+    // Torso in high-visibility tactical yellow ballistic jacket
     const torso = new THREE.Mesh(trackGeo(new THREE.CapsuleGeometry(0.38, 0.58, 6, 12)), jacketMat);
     torso.position.set(0, 0.95, 0);
     torso.castShadow = true;
     operativeGroup.add(torso);
 
-    // Tactical Armor Vest Plate inside jacket
-    const vest = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(0.72, 0.54, 0.48)), vestMat);
+    // Tactical Armor Vest with ballistic plating & webbing straps
+    const vest = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(0.72, 0.52, 0.48)), vestMat);
     vest.position.set(0, 0.9, 0.04);
     vest.castShadow = true;
     operativeGroup.add(vest);
 
-    // Back Oni/Demon Skull Crest (Iconic Edgerunners emblem on jacket back)
+    // Cross-body tactical utility strap (Black harness webbing)
+    const strapGeo = trackGeo(new THREE.BoxGeometry(0.1, 0.8, 0.52));
+    const strap = new THREE.Mesh(strapGeo, jacketTrimMat);
+    strap.rotation.z = 0.45;
+    strap.position.set(0, 0.94, 0.05);
+    operativeGroup.add(strap);
+
+    // Original Emblem: Hex-Core Neural Falcon / Cyber-Vortex Glyph (100% Original IP)
     const crestCanvas = document.createElement('canvas');
     crestCanvas.width = 256;
     crestCanvas.height = 256;
     const cCtx = crestCanvas.getContext('2d')!;
     cCtx.clearRect(0, 0, 256, 256);
     
-    // Draw glowing stylized red skull crest with horns & sharp teeth
-    cCtx.fillStyle = '#FF1838';
-    
-    // Skull Cranium & Horns
+    // Outer hexagonal circuit ring
+    cCtx.strokeStyle = '#FCEE0A';
+    cCtx.lineWidth = 6;
     cCtx.beginPath();
-    cCtx.moveTo(128, 30);
-    cCtx.bezierCurveTo(70, 30, 45, 75, 45, 125);
-    cCtx.bezierCurveTo(45, 175, 75, 205, 95, 215);
-    cCtx.lineTo(95, 235);
-    cCtx.lineTo(161, 235);
-    cCtx.lineTo(161, 215);
-    cCtx.bezierCurveTo(181, 205, 211, 175, 211, 125);
-    cCtx.bezierCurveTo(211, 75, 186, 30, 128, 30);
-    cCtx.closePath();
-    cCtx.fill();
-    
-    // Horn extensions
-    cCtx.beginPath();
-    cCtx.moveTo(55, 75);
-    cCtx.quadraticCurveTo(20, 40, 30, 15);
-    cCtx.quadraticCurveTo(55, 35, 75, 60);
-    cCtx.fill();
-    
-    cCtx.beginPath();
-    cCtx.moveTo(201, 75);
-    cCtx.quadraticCurveTo(236, 40, 226, 15);
-    cCtx.quadraticCurveTo(201, 35, 181, 60);
-    cCtx.fill();
-    
-    // Eye sockets cut out (dark yellow/black)
-    cCtx.fillStyle = '#07090D';
-    cCtx.beginPath();
-    cCtx.moveTo(80, 115);
-    cCtx.lineTo(112, 130);
-    cCtx.lineTo(85, 145);
-    cCtx.closePath();
-    cCtx.fill();
-    
-    cCtx.beginPath();
-    cCtx.moveTo(176, 115);
-    cCtx.lineTo(144, 130);
-    cCtx.lineTo(171, 145);
-    cCtx.closePath();
-    cCtx.fill();
-    
-    // Teeth grid
-    cCtx.fillStyle = '#07090D';
-    for (let t = 105; t <= 151; t += 12) {
-      cCtx.fillRect(t, 215, 6, 16);
+    for (let a = 0; a < 6; a++) {
+      const angle = (a * Math.PI) / 3;
+      const x = 128 + 90 * Math.cos(angle);
+      const y = 128 + 90 * Math.sin(angle);
+      if (a === 0) cCtx.moveTo(x, y);
+      else cCtx.lineTo(x, y);
     }
+    cCtx.closePath();
+    cCtx.stroke();
+
+    // Geometric Neural Falcon Wing Glyphs (Crimson & Cyan)
+    cCtx.fillStyle = '#FF1838';
+    // Left Cyber-Wing
+    cCtx.beginPath();
+    cCtx.moveTo(128, 90);
+    cCtx.lineTo(60, 60);
+    cCtx.lineTo(40, 110);
+    cCtx.lineTo(80, 140);
+    cCtx.lineTo(55, 170);
+    cCtx.lineTo(105, 160);
+    cCtx.lineTo(128, 185);
+    cCtx.closePath();
+    cCtx.fill();
+
+    // Right Cyber-Wing
+    cCtx.beginPath();
+    cCtx.moveTo(128, 90);
+    cCtx.lineTo(196, 60);
+    cCtx.lineTo(216, 110);
+    cCtx.lineTo(176, 140);
+    cCtx.lineTo(201, 170);
+    cCtx.lineTo(151, 160);
+    cCtx.lineTo(128, 185);
+    cCtx.closePath();
+    cCtx.fill();
+
+    // Central Hex Core (Cyan Luminescent)
+    cCtx.fillStyle = '#00E5FF';
+    cCtx.beginPath();
+    for (let a = 0; a < 6; a++) {
+      const angle = (a * Math.PI) / 3 + Math.PI / 6;
+      const x = 128 + 26 * Math.cos(angle);
+      const y = 128 + 26 * Math.sin(angle);
+      if (a === 0) cCtx.moveTo(x, y);
+      else cCtx.lineTo(x, y);
+    }
+    cCtx.closePath();
+    cCtx.fill();
+
+    // Technical Operative Stencil Text: 'OV_SYS // 714'
+    cCtx.fillStyle = '#FFFFFF';
+    cCtx.font = 'bold 16px monospace';
+    cCtx.textAlign = 'center';
+    cCtx.fillText('OV_SYS // 714', 128, 225);
 
     const crestTex = trackTex(new THREE.CanvasTexture(crestCanvas));
     const crestMat = trackMat(new THREE.MeshBasicMaterial({ map: crestTex, transparent: true, side: THREE.DoubleSide }));
@@ -396,43 +429,50 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     crestMesh.rotation.y = Math.PI;
     operativeGroup.add(crestMesh);
 
-    // Luminescent High Collar (Original Cyberpunk Operative Styling)
+    // Luminescent High Collar (Signal Yellow)
     const collar = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.28, 0.32, 0.28, 12, 1, true)), cyberGlowYellow);
     collar.position.set(0, 1.36, 0.04);
     collar.rotation.x = 0.1;
     operativeGroup.add(collar);
 
-    // Contoured Head using Sphere/Capsule
-    const head = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.24, 12, 10)), skinMat);
-    head.position.set(0, 1.54, 0.02);
-    head.scale.set(1.0, 1.15, 1.05);
-    head.castShadow = true;
-    operativeGroup.add(head);
+    // Angular Red Tactical Cyber-Helmet (matches turn-around reference)
+    const helmetHead = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(0.42, 0.44, 0.46)), helmetMat);
+    helmetHead.position.set(0, 1.56, 0.02);
+    helmetHead.castShadow = true;
+    operativeGroup.add(helmetHead);
 
-    // Tactical Undercut Hair
-    const hair = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.26, 10, 8)), trackMat(new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.8 })));
-    hair.position.set(0, 1.66, -0.02);
-    hair.scale.set(1.0, 0.6, 1.05);
-    operativeGroup.add(hair);
+    // Angular Chiseled Facemask / Visor Housing
+    const visorChassisGeo = trackGeo(new THREE.ConeGeometry(0.28, 0.36, 4));
+    const visorChassis = new THREE.Mesh(visorChassisGeo, helmetMat);
+    visorChassis.rotation.x = -Math.PI / 4;
+    visorChassis.rotation.y = Math.PI / 4;
+    visorChassis.position.set(0, 1.54, 0.22);
+    operativeGroup.add(visorChassis);
 
-    // Wrap-Around Optical Cyber-HUD Visor with Glowing Cyan Diode
-    const visor = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.25, 0.25, 0.11, 12, 1, true, -Math.PI / 3, (2 * Math.PI) / 3)), cyberGlowCyan);
-    visor.position.set(0, 1.55, 0.06);
-    operativeGroup.add(visor);
+    // Glowing Optical Sensor Slot (Cyan Diode Slit)
+    const sensorSlot = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(0.28, 0.06, 0.04)), cyberGlowCyan);
+    sensorSlot.position.set(0, 1.58, 0.28);
+    operativeGroup.add(sensorSlot);
 
-    // Temple Neural Data Port
-    const neuralPort = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.04, 0.04, 0.08, 8)), cyberGlowCyan);
-    neuralPort.rotation.z = Math.PI / 2;
-    neuralPort.position.set(0.24, 1.56, 0.02);
-    operativeGroup.add(neuralPort);
+    // Tactical Comms Antenna & Data Port
+    const commsAntenna = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.015, 0.015, 0.38, 6)), trackMat(new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 })));
+    commsAntenna.rotation.z = -0.3;
+    commsAntenna.position.set(-0.24, 1.76, -0.1);
+    operativeGroup.add(commsAntenna);
 
-    // Contoured Arms (Biceps & Forearms) in Yellow Jacket Sleeves
+    // Left Arm (Tactical Ballistic Sleeve + Forearm Cyber-Plating)
     const leftArm = new THREE.Mesh(trackGeo(new THREE.CapsuleGeometry(0.12, 0.52, 6, 8)), jacketMat);
     leftArm.position.set(-0.46, 0.82, 0.22);
     leftArm.rotation.x = -0.42;
     leftArm.castShadow = true;
     operativeGroup.add(leftArm);
 
+    // Left Forearm Telemetry Status Diode (Amber)
+    const leftLed = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.025, 6, 6)), cyberGlowAmber);
+    leftLed.position.set(-0.54, 0.72, 0.35);
+    operativeGroup.add(leftLed);
+
+    // Right Arm (Titanium Cybernetic Arm Chassis)
     const rightArm = new THREE.Mesh(trackGeo(new THREE.CapsuleGeometry(0.12, 0.52, 6, 8)), jacketMat);
     rightArm.position.set(0.46, 0.82, 0.22);
     rightArm.rotation.x = -0.42;
@@ -446,7 +486,22 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     wire.rotation.x = -0.42;
     operativeGroup.add(wire);
 
-    // Contoured Legs using CapsuleGeometry
+    // Back Field Tech Pack / Chassis
+    const backPackGeo = trackGeo(new THREE.BoxGeometry(0.46, 0.58, 0.24));
+    const backPackMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0E1420, metalness: 0.6, roughness: 0.4 }));
+    const backPack = new THREE.Mesh(backPackGeo, backPackMat);
+    backPack.position.set(0, 0.96, -0.36);
+    operativeGroup.add(backPack);
+
+    // Tactical Scabbard / Antenna Rig mounted diagonally across back pack
+    const scabbardGeo = trackGeo(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6));
+    const scabbardMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.85, roughness: 0.2 }));
+    const scabbard = new THREE.Mesh(scabbardGeo, scabbardMat);
+    scabbard.rotation.z = 0.55;
+    scabbard.position.set(0.12, 1.15, -0.46);
+    operativeGroup.add(scabbard);
+
+    // Contoured Legs in Tactical Dark Cargo Trousers
     const leftLeg = new THREE.Mesh(trackGeo(new THREE.CapsuleGeometry(0.14, 0.65, 6, 8)), pantsMat);
     leftLeg.position.set(-0.25, 0.15, -0.36);
     leftLeg.rotation.x = 0.82;
@@ -459,7 +514,19 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     rightLeg.castShadow = true;
     operativeGroup.add(rightLeg);
 
-    // Reinforced Combat Boots
+    // Tactical Yellow Leg Harness Straps (matching turn-around concept)
+    const legStrapGeo = trackGeo(new THREE.TorusGeometry(0.16, 0.02, 6, 12));
+    const leftStrap = new THREE.Mesh(legStrapGeo, cyberGlowYellow);
+    leftStrap.position.set(-0.25, 0.25, -0.28);
+    leftStrap.rotation.x = Math.PI / 2.5;
+    operativeGroup.add(leftStrap);
+
+    const rightStrap = new THREE.Mesh(legStrapGeo, cyberGlowYellow);
+    rightStrap.position.set(0.25, 0.25, -0.28);
+    rightStrap.rotation.x = Math.PI / 2.5;
+    operativeGroup.add(rightStrap);
+
+    // Reinforced Combat Boots with Tread Soles
     const leftBoot = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(0.28, 0.32, 0.42)), bootMat);
     leftBoot.position.set(-0.25, -0.38, -0.62);
     operativeGroup.add(leftBoot);
@@ -621,16 +688,17 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     }
     cityGroup.add(instancedWindows);
 
-    // 11. Elevated Lower Canyon Highway (Relocated Below Terrace Parapet)
-    // Placed at y = -1.2, z = -32 to keep hero text region completely clear!
-    const highwayViaductGeo = trackGeo(new THREE.BoxGeometry(36, 1.4, 3.2));
+    // 11. Elevated Lower Canyon Highway (Relocated Strictly to Right Canyon Gap)
+    // Deep at y = -5.5, z = -46.0 on the right side only (x: 8.0 to 32.0)
+    // This ensures ZERO horizontal traffic light streaks cross the hero CTA buttons or central view!
+    const highwayViaductGeo = trackGeo(new THREE.BoxGeometry(26, 1.4, 3.2));
     const highwayViaductMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x090D17, roughness: 0.6, metalness: 0.4 }));
     const highwayViaduct = new THREE.Mesh(highwayViaductGeo, highwayViaductMat);
-    highwayViaduct.position.set(0, -1.2, -32);
+    highwayViaduct.position.set(18.0, -5.5, -46.0);
     cityGroup.add(highwayViaduct);
 
-    // Highway Traffic Ribbons (Moving red taillights & white headlights in the lower canyon)
-    const trafficGeo = trackGeo(new THREE.PlaneGeometry(35.6, 0.45));
+    // Highway Traffic Ribbons (Subtle distant headlights & taillights deep in right canyon floor)
+    const trafficGeo = trackGeo(new THREE.PlaneGeometry(25.6, 0.4));
     const trafficCanvas = document.createElement('canvas');
     trafficCanvas.width = 512;
     trafficCanvas.height = 32;
@@ -639,159 +707,194 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     tCtx.fillRect(0, 0, 512, 32);
     tCtx.fillStyle = '#FF1744'; // Red taillights
     for (let x = 0; x < 512; x += 44) {
-      tCtx.fillRect(x, 4, 26, 8);
+      tCtx.fillRect(x, 4, 24, 8);
     }
     tCtx.fillStyle = '#E0F2FE'; // Cyan-white headlights
     for (let x = 22; x < 512; x += 44) {
-      tCtx.fillRect(x, 18, 24, 8);
+      tCtx.fillRect(x, 18, 22, 8);
     }
     const trafficTex = trackTex(new THREE.CanvasTexture(trafficCanvas));
     trafficTex.wrapS = THREE.RepeatWrapping;
     const trafficMat = trackMat(new THREE.MeshBasicMaterial({ map: trafficTex, transparent: true }));
     const trafficMesh = new THREE.Mesh(trafficGeo, trafficMat);
-    trafficMesh.position.set(0, -0.4, -31.8);
+    trafficMesh.position.set(18.0, -4.7, -45.8);
     trafficMesh.rotation.x = -Math.PI / 4;
     cityGroup.add(trafficMesh);
 
-    // 12. Recomposed Night City Landmarks: Arasaka Tower, Lucy Hologram & Left Scaffolding
-    // Arasaka Glowing Red Circular Crest Neon Sign on Tower 1
-    const arasakaCanvas = document.createElement('canvas');
-    arasakaCanvas.width = 512;
-    arasakaCanvas.height = 256;
-    const aCtx2 = arasakaCanvas.getContext('2d')!;
-    aCtx2.clearRect(0, 0, 512, 256);
+    // 12. Original Night City Advertising Structures (100% Original IP)
+    // A. Tower 1 Upper Sign: "NEURON // DYNAMICS" with Neural Brain Hologram (inspired by reference art)
+    const neuronCanvas = document.createElement('canvas');
+    neuronCanvas.width = 512;
+    neuronCanvas.height = 256;
+    const nCtx = neuronCanvas.getContext('2d')!;
+    nCtx.fillStyle = '#060A14';
+    nCtx.fillRect(0, 0, 512, 256);
     
-    // Draw Arasaka Circular Red Crest
-    aCtx2.strokeStyle = '#FF0033';
-    aCtx2.lineWidth = 14;
-    aCtx2.beginPath();
-    aCtx2.arc(256, 100, 68, 0, Math.PI * 2);
-    aCtx2.stroke();
-    
-    // 3 stylized lotus petals inside circle
-    aCtx2.fillStyle = '#FF0033';
-    aCtx2.beginPath();
-    aCtx2.ellipse(256, 75, 16, 32, 0, 0, Math.PI * 2);
-    aCtx2.fill();
-    aCtx2.beginPath();
-    aCtx2.ellipse(230, 120, 16, 32, -Math.PI / 3, 0, Math.PI * 2);
-    aCtx2.fill();
-    aCtx2.beginPath();
-    aCtx2.ellipse(282, 120, 16, 32, Math.PI / 3, 0, Math.PI * 2);
-    aCtx2.fill();
+    // Cyan Outer Border Frame with notched corners
+    nCtx.strokeStyle = '#00E5FF';
+    nCtx.lineWidth = 6;
+    nCtx.strokeRect(10, 10, 492, 236);
 
-    // Bold lowercase 'arasaka' text
-    aCtx2.fillStyle = '#FF0033';
-    aCtx2.font = 'bold 38px sans-serif';
-    aCtx2.textAlign = 'center';
-    aCtx2.fillText('arasaka', 256, 215);
+    // Glowing Magenta Dot-Matrix Neural Brain Hologram
+    nCtx.fillStyle = '#FF2E88';
+    // Draw procedural hemispheric brain nodes
+    const brainNodes = [
+      // Left hemisphere
+      { x: 190, y: 70 }, { x: 215, y: 55 }, { x: 240, y: 60 },
+      { x: 170, y: 95 }, { x: 195, y: 90 }, { x: 220, y: 85 }, { x: 245, y: 90 },
+      { x: 160, y: 125 }, { x: 185, y: 120 }, { x: 215, y: 115 }, { x: 245, y: 120 },
+      { x: 175, y: 150 }, { x: 205, y: 145 }, { x: 235, y: 150 },
+      // Right hemisphere
+      { x: 322, y: 70 }, { x: 297, y: 55 }, { x: 272, y: 60 },
+      { x: 342, y: 95 }, { x: 317, y: 90 }, { x: 292, y: 85 }, { x: 267, y: 90 },
+      { x: 352, y: 125 }, { x: 327, y: 120 }, { x: 297, y: 115 }, { x: 267, y: 120 },
+      { x: 337, y: 150 }, { x: 307, y: 145 }, { x: 277, y: 150 }
+    ];
 
-    const arasakaTex = trackTex(new THREE.CanvasTexture(arasakaCanvas));
-    const arasakaMat = trackMat(new THREE.MeshBasicMaterial({ map: arasakaTex, transparent: true, side: THREE.DoubleSide }));
-    const arasakaSign = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(8.5, 4.25)), arasakaMat);
-    arasakaSign.position.set(14.5, 31.0, -10.3);
-    arasakaSign.rotation.y = -0.35;
-    cityGroup.add(arasakaSign);
+    // Synaptic connecting axon lines
+    nCtx.strokeStyle = 'rgba(255, 46, 136, 0.45)';
+    nCtx.lineWidth = 1.8;
+    for (let i = 0; i < brainNodes.length; i++) {
+      for (let j = i + 1; j < brainNodes.length; j++) {
+        const dx = brainNodes[i].x - brainNodes[j].x;
+        const dy = brainNodes[i].y - brainNodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 42) {
+          nCtx.beginPath();
+          nCtx.moveTo(brainNodes[i].x, brainNodes[i].y);
+          nCtx.lineTo(brainNodes[j].x, brainNodes[j].y);
+          nCtx.stroke();
+        }
+      }
+    }
 
-    // Lucy / Cyberpunk Edgerunners Holographic Billboard on Tower 1
-    const lucyCanvas = document.createElement('canvas');
-    lucyCanvas.width = 512;
-    lucyCanvas.height = 640;
-    const lCtx = lucyCanvas.getContext('2d')!;
-    lCtx.fillStyle = '#060A12';
-    lCtx.fillRect(0, 0, 512, 640);
+    // Glowing Synaptic Dot Nodes
+    for (const node of brainNodes) {
+      nCtx.beginPath();
+      nCtx.arc(node.x, node.y, 4.2, 0, Math.PI * 2);
+      nCtx.fill();
+    }
 
-    // Magenta outer glowing neon frame
-    lCtx.strokeStyle = '#FF2E88';
-    lCtx.lineWidth = 14;
-    lCtx.strokeRect(10, 10, 492, 620);
+    // Corporate Typography: NEURON // DYNAMICS
+    nCtx.fillStyle = '#FFFFFF';
+    nCtx.font = '900 28px sans-serif';
+    nCtx.textAlign = 'center';
+    nCtx.fillText('NEURON // DYNAMICS', 256, 195);
+
+    nCtx.fillStyle = '#00E5FF';
+    nCtx.font = 'bold 13px monospace';
+    nCtx.fillText('SYNAPSE COGNITION LABS // SECTOR 04', 256, 222);
+
+    const neuronTex = trackTex(new THREE.CanvasTexture(neuronCanvas));
+    const neuronMat = trackMat(new THREE.MeshBasicMaterial({ map: neuronTex, transparent: true, side: THREE.DoubleSide }));
+    const neuronSign = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(9.0, 4.5)), neuronMat);
+    neuronSign.position.set(14.5, 31.0, -10.3);
+    neuronSign.rotation.y = -0.35;
+    cityGroup.add(neuronSign);
+
+    // B. Tower 1 Lower Billboard: "A.I.D.A. // NEURAL INTERFACE" (Original Synthetic AI Assistant)
+    const aidaCanvas = document.createElement('canvas');
+    aidaCanvas.width = 512;
+    aidaCanvas.height = 640;
+    const aidaCtx = aidaCanvas.getContext('2d')!;
+    aidaCtx.fillStyle = '#060A14';
+    aidaCtx.fillRect(0, 0, 512, 640);
+
+    // Magenta outer glowing neon frame (matches reference image framing)
+    aidaCtx.strokeStyle = '#FF2E88';
+    aidaCtx.lineWidth = 14;
+    aidaCtx.strokeRect(10, 10, 492, 620);
 
     // Holographic background grid
-    lCtx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
-    lCtx.lineWidth = 2;
+    aidaCtx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
+    aidaCtx.lineWidth = 2;
     for (let gx = 20; gx < 500; gx += 40) {
-      lCtx.beginPath();
-      lCtx.moveTo(gx, 20);
-      lCtx.lineTo(gx, 500);
-      lCtx.stroke();
+      aidaCtx.beginPath();
+      aidaCtx.moveTo(gx, 20);
+      aidaCtx.lineTo(gx, 500);
+      aidaCtx.stroke();
     }
     for (let gy = 20; gy < 500; gy += 40) {
-      lCtx.beginPath();
-      lCtx.moveTo(20, gy);
-      lCtx.lineTo(492, gy);
-      lCtx.stroke();
+      aidaCtx.beginPath();
+      aidaCtx.moveTo(20, gy);
+      aidaCtx.lineTo(492, gy);
+      aidaCtx.stroke();
     }
 
-    // Stylized Anime Profile Silhouette of Lucy (Cyberpunk: Edgerunners)
-    // Head & Neck
-    lCtx.fillStyle = '#0F1A2E';
-    lCtx.beginPath();
-    lCtx.moveTo(220, 140);
-    lCtx.bezierCurveTo(200, 100, 260, 70, 320, 80);
-    lCtx.bezierCurveTo(380, 90, 410, 150, 400, 220);
-    lCtx.bezierCurveTo(400, 290, 360, 360, 310, 390);
-    lCtx.lineTo(260, 440);
-    lCtx.lineTo(190, 430);
-    lCtx.bezierCurveTo(210, 380, 230, 320, 220, 260);
-    lCtx.closePath();
-    lCtx.fill();
+    // Stylized Cybernetic Android Silhouette (Original Synthetic AI Operator)
+    aidaCtx.fillStyle = '#0E1729';
+    aidaCtx.beginPath();
+    aidaCtx.moveTo(230, 130);
+    aidaCtx.bezierCurveTo(205, 90, 270, 65, 325, 75);
+    aidaCtx.bezierCurveTo(385, 85, 415, 145, 405, 215);
+    aidaCtx.bezierCurveTo(405, 285, 365, 355, 315, 385);
+    aidaCtx.lineTo(265, 435);
+    aidaCtx.lineTo(195, 425);
+    aidaCtx.bezierCurveTo(215, 375, 235, 315, 225, 255);
+    aidaCtx.closePath();
+    aidaCtx.fill();
 
-    // Magenta Rim Backlight Glow along profile
-    lCtx.strokeStyle = '#FF2E88';
-    lCtx.lineWidth = 8;
-    lCtx.beginPath();
-    lCtx.moveTo(320, 80);
-    lCtx.bezierCurveTo(380, 90, 410, 150, 400, 220);
-    lCtx.bezierCurveTo(400, 290, 360, 360, 310, 390);
-    lCtx.stroke();
+    // Magenta Rim Backlight Glow along android profile
+    aidaCtx.strokeStyle = '#FF2E88';
+    aidaCtx.lineWidth = 8;
+    aidaCtx.beginPath();
+    aidaCtx.moveTo(325, 75);
+    aidaCtx.bezierCurveTo(385, 85, 415, 145, 405, 215);
+    aidaCtx.bezierCurveTo(405, 285, 365, 355, 315, 385);
+    aidaCtx.stroke();
 
-    // Cyan Luminescent Hair Highlights
-    lCtx.strokeStyle = '#00E5FF';
-    lCtx.lineWidth = 6;
-    lCtx.beginPath();
-    lCtx.moveTo(230, 120);
-    lCtx.bezierCurveTo(280, 110, 340, 125, 375, 175);
-    lCtx.stroke();
+    // Cyan Fiber-Optic Tendrils & Circuit Conduits
+    aidaCtx.strokeStyle = '#00E5FF';
+    aidaCtx.lineWidth = 5;
+    aidaCtx.beginPath();
+    aidaCtx.moveTo(240, 115);
+    aidaCtx.bezierCurveTo(285, 105, 345, 120, 380, 170);
+    aidaCtx.stroke();
 
-    lCtx.beginPath();
-    lCtx.moveTo(215, 160);
-    lCtx.bezierCurveTo(260, 155, 320, 175, 350, 230);
-    lCtx.stroke();
+    aidaCtx.beginPath();
+    aidaCtx.moveTo(225, 155);
+    aidaCtx.bezierCurveTo(265, 150, 325, 170, 355, 225);
+    aidaCtx.stroke();
 
-    // Cyber Optical Visor Glow
-    lCtx.fillStyle = '#00E5FF';
-    lCtx.beginPath();
-    lCtx.moveTo(290, 205);
-    lCtx.lineTo(355, 215);
-    lCtx.lineTo(340, 235);
-    lCtx.lineTo(285, 220);
-    lCtx.closePath();
-    lCtx.fill();
+    // Cyber Optical Visor Band (Cyan Luminescent Sensor Slit)
+    aidaCtx.fillStyle = '#00E5FF';
+    aidaCtx.beginPath();
+    aidaCtx.moveTo(295, 200);
+    aidaCtx.lineTo(360, 210);
+    aidaCtx.lineTo(345, 230);
+    aidaCtx.lineTo(290, 215);
+    aidaCtx.closePath();
+    aidaCtx.fill();
 
     // Horizontal Holographic Scanlines
-    lCtx.fillStyle = 'rgba(255, 46, 136, 0.12)';
+    aidaCtx.fillStyle = 'rgba(255, 46, 136, 0.12)';
     for (let sy = 20; sy < 620; sy += 12) {
-      lCtx.fillRect(14, sy, 484, 5);
+      aidaCtx.fillRect(14, sy, 484, 5);
     }
 
-    // Bottom Typography: EDGERUNNERS
-    lCtx.fillStyle = '#FCEE0A';
-    lCtx.font = '900 48px sans-serif';
-    lCtx.textAlign = 'center';
-    lCtx.fillText('EDGERUNNERS', 256, 565);
+    // Bottom Typography: A.I.D.A. // NEURAL INTERFACE
+    aidaCtx.fillStyle = '#FCEE0A';
+    aidaCtx.font = '900 42px sans-serif';
+    aidaCtx.textAlign = 'center';
+    aidaCtx.fillText('A.I.D.A.', 256, 545);
 
-    lCtx.fillStyle = '#00E5FF';
-    lCtx.font = 'bold 20px monospace';
-    lCtx.fillText('PORTFOLIO_OS // NIGHT CITY', 256, 605);
+    aidaCtx.fillStyle = '#00E5FF';
+    aidaCtx.font = 'bold 20px monospace';
+    aidaCtx.fillText('SYNTHETIC AI // ARCHITECTURE', 256, 580);
 
-    const lucyTex = trackTex(new THREE.CanvasTexture(lucyCanvas));
-    const lucyMat = trackMat(new THREE.MeshBasicMaterial({ map: lucyTex, transparent: true, side: THREE.DoubleSide }));
-    const lucyBillboard = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(9.5, 12.0)), lucyMat);
-    lucyBillboard.position.set(14.5, 18.0, -10.3);
-    lucyBillboard.rotation.y = -0.35;
-    cityGroup.add(lucyBillboard);
+    aidaCtx.fillStyle = '#94A3B8';
+    aidaCtx.font = '14px monospace';
+    aidaCtx.fillText('PORTFOLIO_OS // NIGHT CITY', 256, 608);
 
-    // Left Rooftop Scaffolding & Vertical Neon Sign (behind operative at left of screen)
+    const aidaTex = trackTex(new THREE.CanvasTexture(aidaCanvas));
+    const aidaMat = trackMat(new THREE.MeshBasicMaterial({ map: aidaTex, transparent: true, side: THREE.DoubleSide }));
+    const aidaBillboard = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(9.5, 12.0)), aidaMat);
+    aidaBillboard.position.set(14.5, 18.0, -10.3);
+    aidaBillboard.rotation.y = -0.35;
+    cityGroup.add(aidaBillboard);
+
+    // C. Left Rooftop Scaffolding & Vertical Neon Sign (Relocated Far Outside Hero Text Zone)
+    // Shifted to x = -24.0, z = -20.0 to guarantee 100% text-safe area for "OM VYAS_" heading
     const scaffoldGroup = new THREE.Group();
     const trussMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 }));
     
@@ -850,14 +953,16 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     vSignMesh.position.set(0, 9, 1.1);
     scaffoldGroup.add(vSignMesh);
 
-    scaffoldGroup.position.set(-11.5, 0.5, -12.0);
-    scaffoldGroup.rotation.y = 0.25;
+    // Relocated to x = -24.0, z = -20.0 (Far left peripheral edge)
+    scaffoldGroup.position.set(-24.0, 0.5, -20.0);
+    scaffoldGroup.rotation.y = 0.35;
     cityGroup.add(scaffoldGroup);
 
     scene.add(cityGroup);
 
     // 13. Distinctive Flying Aerodyne Vehicles (AV-01 Tactical Spinner & AV-02 Interceptor)
-    // Strictly routed through the right-hand canyon to protect the hero text zone!
+    // Inspired by reference aerodyne art: twin forward wedge pontoons with vertical radiator slats
+    // Strictly routed through the right-hand canyon (x: 10.0 to 22.0) to protect the hero text zone!
     const vehicles: { mesh: THREE.Group; speed: number; startZ: number; rangeZ: number }[] = [];
     const vehicleCount = qualityTier === 'cinematic' ? 3 : qualityTier === 'balanced' ? 2 : 1;
 
@@ -865,47 +970,86 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       const avGroup = new THREE.Group();
 
       if (i % 2 === 0) {
-        // AV-01 TACTICAL SPINNER (Swept Fuselage with Forward Canards & Side Intakes)
-        const hullGeo = trackGeo(new THREE.CylinderGeometry(0.35, 0.75, 3.2, 6));
+        // AV-01 TACTICAL AERODYNE SPINNER (Twin Forward Wedge Pontoons + Ducted Turbines)
+        const hullGeo = trackGeo(new THREE.BoxGeometry(1.6, 0.45, 3.4));
         const hullMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0C101A, metalness: 0.9, roughness: 0.2 }));
         const hull = new THREE.Mesh(hullGeo, hullMat);
-        hull.rotation.x = Math.PI / 2;
         avGroup.add(hull);
 
-        // Side Canard Wings
-        const wingGeo = trackGeo(new THREE.BoxGeometry(2.4, 0.08, 1.2));
+        // Twin Forward Wedge Intake Pontoons (matches reference vehicle art)
+        const pontoonGeo = trackGeo(new THREE.BoxGeometry(0.38, 0.32, 1.4));
+        const leftPontoon = new THREE.Mesh(pontoonGeo, hullMat);
+        leftPontoon.position.set(-0.72, -0.06, -1.2);
+        avGroup.add(leftPontoon);
+
+        const rightPontoon = new THREE.Mesh(pontoonGeo, hullMat);
+        rightPontoon.position.set(0.72, -0.06, -1.2);
+        avGroup.add(rightPontoon);
+
+        // Illuminated Vertical Radiator Slats in Pontoons (Cyan Glow)
+        const slatMat = trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF }));
+        const leftSlat = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(0.28, 0.22)), slatMat);
+        leftSlat.position.set(-0.72, -0.06, -1.91);
+        avGroup.add(leftSlat);
+
+        const rightSlat = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(0.28, 0.22)), slatMat);
+        rightSlat.position.set(0.72, -0.06, -1.91);
+        avGroup.add(rightSlat);
+
+        // Swept Aerodynamic Wings with Winglets
+        const wingGeo = trackGeo(new THREE.BoxGeometry(3.6, 0.08, 1.2));
         const wing = new THREE.Mesh(wingGeo, hullMat);
-        wing.position.set(0, 0, 0.2);
+        wing.position.set(0, 0.05, 0.3);
         avGroup.add(wing);
 
-        // Cockpit Canopy Glass
-        const canopy = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.42, 8, 6)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.85 })));
-        canopy.scale.set(0.9, 0.6, 1.8);
-        canopy.position.set(0, 0.35, -0.3);
+        // Orange/Amber Trim Lines along wings (matches reference art)
+        const trimGeo = trackGeo(new THREE.BoxGeometry(3.62, 0.09, 0.08));
+        const trimMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xF59E0B }));
+        const wingTrim = new THREE.Mesh(trimGeo, trimMat);
+        wingTrim.position.set(0, 0.06, 0.88);
+        avGroup.add(wingTrim);
+
+        // Multi-Faceted Cockpit Canopy Glass with Cyan HUD Interior
+        const canopy = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.44, 8, 6)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.85 })));
+        canopy.scale.set(0.95, 0.55, 1.9);
+        canopy.position.set(0, 0.36, -0.2);
         avGroup.add(canopy);
 
-        // Forward Projector Headlights
-        const hl = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.12, 6, 6)), trackMat(new THREE.MeshBasicMaterial({ color: 0xFFFFFF })));
-        hl.position.set(-0.45, 0, -1.6);
-        avGroup.add(hl);
-        const hr = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.12, 6, 6)), trackMat(new THREE.MeshBasicMaterial({ color: 0xFFFFFF })));
-        hr.position.set(0.45, 0, -1.6);
-        avGroup.add(hr);
+        // Dual Ducted Hover Turbine Nacelles with Glowing Cyan Rings
+        const nacelleGeo = trackGeo(new THREE.CylinderGeometry(0.32, 0.32, 0.45, 10));
+        const nacelleMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x1A222D, metalness: 0.8 }));
+        const nacelleRingMat = trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF }));
 
-        // Dual Plasma Thrusters
-        const t1 = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.16, 0.2, 0.4, 8)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF })));
+        const leftNacelle = new THREE.Mesh(nacelleGeo, nacelleMat);
+        leftNacelle.rotation.x = Math.PI / 2;
+        leftNacelle.position.set(-1.4, -0.08, 0.4);
+        avGroup.add(leftNacelle);
+        const leftRing = new THREE.Mesh(trackGeo(new THREE.TorusGeometry(0.28, 0.03, 6, 12)), nacelleRingMat);
+        leftRing.position.set(-1.4, -0.08, 0.4);
+        avGroup.add(leftRing);
+
+        const rightNacelle = new THREE.Mesh(nacelleGeo, nacelleMat);
+        rightNacelle.rotation.x = Math.PI / 2;
+        rightNacelle.position.set(1.4, -0.08, 0.4);
+        avGroup.add(rightNacelle);
+        const rightRing = new THREE.Mesh(trackGeo(new THREE.TorusGeometry(0.28, 0.03, 6, 12)), nacelleRingMat);
+        rightRing.position.set(1.4, -0.08, 0.4);
+        avGroup.add(rightRing);
+
+        // Dual Rear Plasma Jet Thrusters
+        const t1 = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.16, 0.22, 0.45, 8)), slatMat);
         t1.rotation.x = Math.PI / 2;
-        t1.position.set(-0.5, 0, 1.6);
+        t1.position.set(-0.48, 0, 1.7);
         avGroup.add(t1);
-        const t2 = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.16, 0.2, 0.4, 8)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF })));
+        const t2 = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.16, 0.22, 0.45, 8)), slatMat);
         t2.rotation.x = Math.PI / 2;
-        t2.position.set(0.5, 0, 1.6);
+        t2.position.set(0.48, 0, 1.7);
         avGroup.add(t2);
 
-        // Luminous Light-Trail Ribbon
-        const trail = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(1.2, 6.5)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.35, side: THREE.DoubleSide })));
+        // Luminous Cyan Light-Trail Ribbon
+        const trail = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(1.2, 7.5)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.35, side: THREE.DoubleSide })));
         trail.rotation.x = Math.PI / 2;
-        trail.position.set(0, 0, 4.8);
+        trail.position.set(0, 0, 5.4);
         avGroup.add(trail);
       } else {
         // AV-02 HIGH-SPEED INTERCEPTOR (Needle Dart Fuselage with Swept Delta Wings)
@@ -916,7 +1060,7 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
         avGroup.add(dart);
 
         // Swept Delta Wings
-        const deltaWingGeo = trackGeo(new THREE.BoxGeometry(2.8, 0.06, 1.6));
+        const deltaWingGeo = trackGeo(new THREE.BoxGeometry(3.0, 0.06, 1.6));
         const deltaWing = new THREE.Mesh(deltaWingGeo, dartMat);
         deltaWing.position.set(0, 0, 0.6);
         avGroup.add(deltaWing);
@@ -927,21 +1071,21 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
         ion.position.set(0, 0, 1.9);
         avGroup.add(ion);
 
-        const ionTrail = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(0.9, 7.0)), trackMat(new THREE.MeshBasicMaterial({ color: 0xFF2E88, transparent: true, opacity: 0.4, side: THREE.DoubleSide })));
+        const ionTrail = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(0.9, 7.5)), trackMat(new THREE.MeshBasicMaterial({ color: 0xFF2E88, transparent: true, opacity: 0.4, side: THREE.DoubleSide })));
         ionTrail.rotation.x = Math.PI / 2;
-        ionTrail.position.set(0, 0, 5.2);
+        ionTrail.position.set(0, 0, 5.6);
         avGroup.add(ionTrail);
       }
 
-      // STRICTLY RIGHT SIDE CANYON POSITIONING: x between +7.5 and +17.5
-      const posX = 7.5 + i * 5.0;
-      const posY = 6.2 + i * 2.2;
+      // STRICTLY RIGHT SIDE CANYON POSITIONING: x between +11.0 and +21.0
+      const posX = 11.5 + i * 4.5;
+      const posY = 7.5 + i * 2.5;
       avGroup.position.set(posX, posY, -18 - i * 14.0);
       scene.add(avGroup);
 
       vehicles.push({
         mesh: avGroup,
-        speed: 8.0 + i * 3.0, // Speed in units per second!
+        speed: 8.5 + i * 3.0, // Speed in units per second
         startZ: 5,
         rangeZ: 60
       });
