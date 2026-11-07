@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PBR Texture Generator</title>
+</head>
+<body style="background: #000; color: #fff; font-family: monospace;">
+  <h2>PBR Texture Generator</h2>
+  <div id="status">Generating textures...</div>
+  <script>
+    // Simplex / Perlin noise implementation for procedural PBR textures
+    function createNoise2D() {
+      const p = new Uint8Array(512);
+      for (let i = 0; i < 256; i++) p[i] = p[i + 256] = Math.floor(Math.random() * 256);
+      function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+      function lerp(t, a, b) { return a + t * (b - a); }
+      function grad(hash, x, y) {
+        const h = hash & 3;
+        const u = h < 2 ? x : y;
+        const v = h < 2 ? y : x;
+        return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+      }
+      return function(x, y) {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        x -= Math.floor(x);
+        y -= Math.floor(y);
+        const u = fade(x);
+        const v = fade(y);
+        const A = p[X] + Y, B = p[X + 1] + Y;
+        return lerp(v,
+          lerp(u, grad(p[A], x, y), grad(p[B], x - 1, y)),
+          lerp(u, grad(p[A + 1], x, y - 1), grad(p[B + 1], x - 1, y - 1))
+        );
+      };
+    }
+
+    const noise2D = createNoise2D();
+
+    function fbm(x, y, octaves = 5, lacunarity = 2.0, gain = 0.5) {
+      let total = 0, frequency = 1, amplitude = 1, maxValue = 0;
+      for (let i = 0; i < octaves; i++) {
+        total += noise2D(x * frequency, y * frequency) * amplitude;
+        maxValue += amplitude;
+        amplitude *= gain;
+        frequency *= lacunarity;
+      }
+      return total / maxValue;
+    }
+
+    // Helper: Generate normal map from heightmap array
+    function heightToNormal(heights, width, height, strength = 2.0) {
+      const normalData = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const xL = (x - 1 + width) % width;
+          const xR = (x + 1) % width;
+          const yU = (y - 1 + height) % height;
+          const yD = (y + 1) % height;
+
+          const hL = heights[y * width + xL];
+          const hR = heights[y * width + xR];
+          const hU = heights[yU * width + x];
+          const hD = heights[yD * width + x];
+
+          const dx = (hR - hL) * strength;
+          const dy = (hD - hU) * strength;
+          const dz = 1.0;
+
+          const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          const nx = (-dx / len) * 0.5 + 0.5;
+          const ny = (-dy / len) * 0.5 + 0.5;
+          const nz = (dz / len) * 0.5 + 0.5;
+
+          const idx = (y * width + x) * 4;
+          normalData[idx] = Math.round(nx * 255);
+          normalData[idx + 1] = Math.round(ny * 255);
+          normalData[idx + 2] = Math.round(nz * 255);
+          normalData[idx + 3] = 255;
+        }
+      }
+      return normalData;
+    }
+
+    // Canvas helper
+    function createCanvas(w, h) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      return c;
+    }
+
+    const generatedTextures = {};
+
+    function generateAll() {
+      // 1. ASPHALT (1024x1024)
+      {
+        const W = 1024, H = 1024;
+        const albedoCanvas = createCanvas(W, H);
+        const albedoCtx = albedoCanvas.getContext('2d');
+        const albedoImg = albedoCtx.createImageData(W, H);
+        const heights = new Float32Array(W * H);
+        const ormCanvas = createCanvas(W, H);
+        const ormCtx = ormCanvas.getContext('2d');
+        const ormImg = ormCtx.createImageData(W, H);
+
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const hIdx = y * W + x;
+
+            // Gravel micro-noise & macro undulation
+            const macro = (fbm(x * 0.005, y * 0.005, 4) + 1) * 0.5;
+            const micro = (fbm(x * 0.05, y * 0.05, 3) + 1) * 0.5;
+            const grain = (Math.random() - 0.5) * 0.15;
+            const val = Math.min(1, Math.max(0, macro * 0.4 + micro * 0.5 + grain));
+            heights[hIdx] = val;
+
+            // Albedo: Dark charcoal with subtle pebble mineral tints
+            const baseLum = 18 + val * 22;
+            albedoImg.data[idx] = Math.round(baseLum * 1.0);
+            albedoImg.data[idx + 1] = Math.round(baseLum * 1.05);
+            albedoImg.data[idx + 2] = Math.round(baseLum * 1.15);
+            albedoImg.data[idx + 3] = 255;
+
+            // Puddle mask: Organic basins where roughness drops to 0.08
+            const puddleNoise = (fbm(x * 0.003, y * 0.003, 3) + 1) * 0.5;
+            const isPuddle = puddleNoise > 0.62 ? Math.min(1, (puddleNoise - 0.62) * 5) : 0;
+
+            // ORM: R=AO, G=Roughness, B=Metallic
+            const ao = Math.round((0.75 + val * 0.25) * 255);
+            const roughnessVal = Math.round((0.85 * (1 - isPuddle) + 0.08 * isPuddle) * 255);
+            const metallicVal = Math.round((0.02 * isPuddle) * 255);
+
+            ormImg.data[idx] = ao;
+            ormImg.data[idx + 1] = roughnessVal;
+            ormImg.data[idx + 2] = metallicVal;
+            ormImg.data[idx + 3] = 255;
+          }
+        }
+        albedoCtx.putImageData(albedoImg, 0, 0);
+        ormCtx.putImageData(ormImg, 0, 0);
+
+        const normalCanvas = createCanvas(W, H);
+        const normalCtx = normalCanvas.getContext('2d');
+        const normalData = heightToNormal(heights, W, H, 3.5);
+        const normalImg = new ImageData(normalData, W, H);
+        normalCtx.putImageData(normalImg, 0, 0);
+
+        generatedTextures['asphalt/asphalt_albedo.png'] = albedoCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['asphalt/asphalt_normal.png'] = normalCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['asphalt/asphalt_orm.png'] = ormCanvas.toDataURL('image/png').split(',')[1];
+      }
+
+      // 2. CONCRETE (1024x1024)
+      {
+        const W = 1024, H = 1024;
+        const albedoCanvas = createCanvas(W, H);
+        const albedoCtx = albedoCanvas.getContext('2d');
+        const albedoImg = albedoCtx.createImageData(W, H);
+        const heights = new Float32Array(W * H);
+        const ormCanvas = createCanvas(W, H);
+        const ormCtx = ormCanvas.getContext('2d');
+        const ormImg = ormCtx.createImageData(W, H);
+
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const hIdx = y * W + x;
+
+            // Formwork panel grid (panels every 256 pixels)
+            const gridX = Math.abs((x % 256) - 128) / 128;
+            const gridY = Math.abs((y % 256) - 128) / 128;
+            const isSeam = ((x % 256) < 3 || (y % 256) < 3) ? 0.35 : 1.0;
+
+            const noise = (fbm(x * 0.01, y * 0.01, 4) + 1) * 0.5;
+            const pore = Math.random() < 0.04 ? 0.4 : 1.0;
+            const val = Math.min(1, Math.max(0, noise * 0.7 + 0.3)) * pore * isSeam;
+            heights[hIdx] = val;
+
+            const lum = 40 + val * 35;
+            albedoImg.data[idx] = Math.round(lum * 0.96);
+            albedoImg.data[idx + 1] = Math.round(lum * 1.0);
+            albedoImg.data[idx + 2] = Math.round(lum * 1.08);
+            albedoImg.data[idx + 3] = 255;
+
+            const ao = Math.round(Math.min(1, isSeam * (0.8 + noise * 0.2)) * 255);
+            const roughness = Math.round((0.80 + (1 - val) * 0.15) * 255);
+            const metallic = 0;
+
+            ormImg.data[idx] = ao;
+            ormImg.data[idx + 1] = roughness;
+            ormImg.data[idx + 2] = metallic;
+            ormImg.data[idx + 3] = 255;
+          }
+        }
+        albedoCtx.putImageData(albedoImg, 0, 0);
+        ormCtx.putImageData(ormImg, 0, 0);
+
+        const normalCanvas = createCanvas(W, H);
+        const normalCtx = normalCanvas.getContext('2d');
+        const normalData = heightToNormal(heights, W, H, 2.5);
+        normalCtx.putImageData(new ImageData(normalData, W, H), 0, 0);
+
+        generatedTextures['concrete/concrete_albedo.png'] = albedoCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['concrete/concrete_normal.png'] = normalCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['concrete/concrete_orm.png'] = ormCanvas.toDataURL('image/png').split(',')[1];
+      }
+
+      // 3. STEEL / ANODIZED METAL (1024x1024)
+      {
+        const W = 1024, H = 1024;
+        const albedoCanvas = createCanvas(W, H);
+        const albedoCtx = albedoCanvas.getContext('2d');
+        const albedoImg = albedoCtx.createImageData(W, H);
+        const heights = new Float32Array(W * H);
+        const ormCanvas = createCanvas(W, H);
+        const ormCtx = ormCanvas.getContext('2d');
+        const ormImg = ormCtx.createImageData(W, H);
+
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const hIdx = y * W + x;
+
+            // Brushed horizontal scratches
+            const brush = (Math.sin(y * 1.8 + Math.random() * 2) * 0.5 + 0.5) * 0.15;
+            const plate = (fbm(x * 0.004, y * 0.004, 3) + 1) * 0.5;
+            const seam = (x % 512 < 4 || y % 512 < 4) ? 0.3 : 1.0;
+            const val = (plate * 0.85 + brush) * seam;
+            heights[hIdx] = val;
+
+            const lum = 24 + val * 28;
+            albedoImg.data[idx] = Math.round(lum * 0.95);
+            albedoImg.data[idx + 1] = Math.round(lum * 1.02);
+            albedoImg.data[idx + 2] = Math.round(lum * 1.12);
+            albedoImg.data[idx + 3] = 255;
+
+            const ao = Math.round(Math.min(1, seam * 0.95) * 255);
+            const roughness = Math.round((0.26 + (1 - brush) * 0.12) * 255);
+            const metallic = Math.round(235); // 0.92 metalness
+
+            ormImg.data[idx] = ao;
+            ormImg.data[idx + 1] = roughness;
+            ormImg.data[idx + 2] = metallic;
+            ormImg.data[idx + 3] = 255;
+          }
+        }
+        albedoCtx.putImageData(albedoImg, 0, 0);
+        ormCtx.putImageData(ormImg, 0, 0);
+
+        const normalCanvas = createCanvas(W, H);
+        const normalCtx = normalCanvas.getContext('2d');
+        const normalData = heightToNormal(heights, W, H, 2.0);
+        normalCtx.putImageData(new ImageData(normalData, W, H), 0, 0);
+
+        generatedTextures['metal/metal_steel_albedo.png'] = albedoCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['metal/metal_steel_normal.png'] = normalCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['metal/metal_steel_orm.png'] = ormCanvas.toDataURL('image/png').split(',')[1];
+      }
+
+      // 4. FABRIC / YELLOW BALLISTIC (512x512)
+      {
+        const W = 512, H = 512;
+        const albedoCanvas = createCanvas(W, H);
+        const albedoCtx = albedoCanvas.getContext('2d');
+        const albedoImg = albedoCtx.createImageData(W, H);
+        const heights = new Float32Array(W * H);
+        const ormCanvas = createCanvas(W, H);
+        const ormCtx = ormCanvas.getContext('2d');
+        const ormImg = ormCtx.createImageData(W, H);
+
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const hIdx = y * W + x;
+
+            // Basketweave pattern (period 8)
+            const wx = Math.sin((x / 4) * Math.PI);
+            const wy = Math.sin((y / 4) * Math.PI);
+            const weave = (wx * wy * 0.5 + 0.5);
+            heights[hIdx] = weave;
+
+            // Vibrant cyberpunk signal yellow: #FCEE0A (252, 238, 10)
+            const shade = 0.85 + weave * 0.15;
+            albedoImg.data[idx] = Math.round(252 * shade);
+            albedoImg.data[idx + 1] = Math.round(238 * shade);
+            albedoImg.data[idx + 2] = Math.round(10 * shade);
+            albedoImg.data[idx + 3] = 255;
+
+            const ao = Math.round((0.8 + weave * 0.2) * 255);
+            const roughness = Math.round((0.74 + (1 - weave) * 0.1) * 255);
+            const metallic = 0;
+
+            ormImg.data[idx] = ao;
+            ormImg.data[idx + 1] = roughness;
+            ormImg.data[idx + 2] = metallic;
+            ormImg.data[idx + 3] = 255;
+          }
+        }
+        albedoCtx.putImageData(albedoImg, 0, 0);
+        ormCtx.putImageData(ormImg, 0, 0);
+
+        const normalCanvas = createCanvas(W, H);
+        const normalCtx = normalCanvas.getContext('2d');
+        const normalData = heightToNormal(heights, W, H, 2.2);
+        normalCtx.putImageData(new ImageData(normalData, W, H), 0, 0);
+
+        generatedTextures['fabric/fabric_yellow_albedo.png'] = albedoCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['fabric/fabric_yellow_normal.png'] = normalCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['fabric/fabric_yellow_orm.png'] = ormCanvas.toDataURL('image/png').split(',')[1];
+      }
+
+      // 5. CARBON COMPOSITE (512x512)
+      {
+        const W = 512, H = 512;
+        const albedoCanvas = createCanvas(W, H);
+        const albedoCtx = albedoCanvas.getContext('2d');
+        const albedoImg = albedoCtx.createImageData(W, H);
+        const heights = new Float32Array(W * H);
+        const ormCanvas = createCanvas(W, H);
+        const ormCtx = ormCanvas.getContext('2d');
+        const ormImg = ormCtx.createImageData(W, H);
+
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const hIdx = y * W + x;
+
+            // 2x2 Twill pattern
+            const twill = (((x + y) >> 3) & 1) ^ (((x - y) >> 3) & 1);
+            const lum = twill ? 36 : 14;
+            heights[hIdx] = twill ? 0.7 : 0.3;
+
+            albedoImg.data[idx] = lum;
+            albedoImg.data[idx + 1] = lum;
+            albedoImg.data[idx + 2] = lum + 2;
+            albedoImg.data[idx + 3] = 255;
+
+            ormImg.data[idx] = 240; // High AO
+            ormImg.data[idx + 1] = Math.round(0.22 * 255); // Clearcoat gloss
+            ormImg.data[idx + 2] = Math.round(0.65 * 255); // Semi-metallic
+            ormImg.data[idx + 3] = 255;
+          }
+        }
+        albedoCtx.putImageData(albedoImg, 0, 0);
+        ormCtx.putImageData(ormImg, 0, 0);
+
+        const normalCanvas = createCanvas(W, H);
+        const normalCtx = normalCanvas.getContext('2d');
+        const normalData = heightToNormal(heights, W, H, 1.8);
+        normalCtx.putImageData(new ImageData(normalData, W, H), 0, 0);
+
+        generatedTextures['carbon/carbon_albedo.png'] = albedoCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['carbon/carbon_normal.png'] = normalCanvas.toDataURL('image/png').split(',')[1];
+        generatedTextures['carbon/carbon_orm.png'] = ormCanvas.toDataURL('image/png').split(',')[1];
+      }
+
+      // 6. DECALS & EMBLEMS
+      {
+        // 6A. Hazard Stripes (512x128)
+        const hazCanvas = createCanvas(512, 128);
+        const hazCtx = hazCanvas.getContext('2d');
+        hazCtx.fillStyle = '#0a0a0a';
+        hazCtx.fillRect(0, 0, 512, 128);
+        hazCtx.fillStyle = '#fcee0a';
+        for (let i = -128; i < 640; i += 48) {
+          hazCtx.beginPath();
+          hazCtx.moveTo(i, 0);
+          hazCtx.lineTo(i + 24, 0);
+          hazCtx.lineTo(i - 24, 128);
+          hazCtx.lineTo(i - 48, 128);
+          hazCtx.closePath();
+          hazCtx.fill();
+        }
+        generatedTextures['decals/hazard_stripes.png'] = hazCanvas.toDataURL('image/png').split(',')[1];
+
+        // 6B. Neural Falcon Operative Emblem (512x512, transparent background)
+        const falCanvas = createCanvas(512, 512);
+        const falCtx = falCanvas.getContext('2d');
+        falCtx.clearRect(0, 0, 512, 512);
+        
+        // Chiseled geometric falcon
+        falCtx.save();
+        falCtx.translate(256, 256);
+        falCtx.strokeStyle = '#00e5ff';
+        falCtx.lineWidth = 8;
+        falCtx.shadowColor = '#00e5ff';
+        falCtx.shadowBlur = 16;
+        
+        // Falcon wings
+        falCtx.beginPath();
+        falCtx.moveTo(0, -140);
+        falCtx.lineTo(160, -60);
+        falCtx.lineTo(210, 40);
+        falCtx.lineTo(120, 30);
+        falCtx.lineTo(70, 90);
+        falCtx.lineTo(0, 160);
+        falCtx.lineTo(-70, 90);
+        falCtx.lineTo(-120, 30);
+        falCtx.lineTo(-210, 40);
+        falCtx.lineTo(-160, -60);
+        falCtx.closePath();
+        falCtx.fillStyle = 'rgba(0, 229, 255, 0.25)';
+        falCtx.fill();
+        falCtx.stroke();
+
+        // Inner golden neural crest
+        falCtx.strokeStyle = '#fcee0a';
+        falCtx.shadowColor = '#fcee0a';
+        falCtx.lineWidth = 5;
+        falCtx.beginPath();
+        falCtx.moveTo(0, -90);
+        falCtx.lineTo(50, -20);
+        falCtx.lineTo(0, 70);
+        falCtx.lineTo(-50, -20);
+        falCtx.closePath();
+        falCtx.fillStyle = '#fcee0a';
+        falCtx.fill();
+        falCtx.stroke();
+
+        falCtx.restore();
+        generatedTextures['decals/falcon_emblem.png'] = falCanvas.toDataURL('image/png').split(',')[1];
+
+        // 6C. Corporate Banner 1: NEXUS COGNITION (512x256)
+        const b1Canvas = createCanvas(512, 256);
+        const b1Ctx = b1Canvas.getContext('2d');
+        b1Ctx.fillStyle = '#060a12';
+        b1Ctx.fillRect(0, 0, 512, 256);
+        b1Ctx.strokeStyle = '#00e5ff';
+        b1Ctx.lineWidth = 6;
+        b1Ctx.strokeRect(8, 8, 496, 240);
+        b1Ctx.fillStyle = '#00e5ff';
+        b1Ctx.font = 'bold 36px monospace';
+        b1Ctx.fillText('NEXUS COGNITION', 32, 70);
+        b1Ctx.fillStyle = '#94a3b8';
+        b1Ctx.font = '16px monospace';
+        b1Ctx.fillText('NEURAL SYNAPSE ARCHITECTURE // SYS_V4.2', 32, 110);
+        b1Ctx.fillStyle = '#fcee0a';
+        b1Ctx.fillRect(32, 130, 448, 4);
+        b1Ctx.fillStyle = '#38bdf8';
+        b1Ctx.font = '14px monospace';
+        b1Ctx.fillText('[QUANTUM RUNTIME ENGAGED - 99.999% INTEGRITY]', 32, 170);
+        b1Ctx.fillStyle = '#00e5ff';
+        b1Ctx.fillText('SEC_LEVEL: BLACK-ICE CLEARANCE', 32, 205);
+        generatedTextures['decals/corporate_banner_01.png'] = b1Canvas.toDataURL('image/png').split(',')[1];
+
+        // 6D. Corporate Banner 2: KROMA HEAVY DYNAMICS (512x256)
+        const b2Canvas = createCanvas(512, 256);
+        const b2Ctx = b2Canvas.getContext('2d');
+        b2Ctx.fillStyle = '#12080a';
+        b2Ctx.fillRect(0, 0, 512, 256);
+        b2Ctx.strokeStyle = '#ff2e88';
+        b2Ctx.lineWidth = 6;
+        b2Ctx.strokeRect(8, 8, 496, 240);
+        b2Ctx.fillStyle = '#ff2e88';
+        b2Ctx.font = 'bold 34px monospace';
+        b2Ctx.fillText('KROMA HEAVY DYNAMICS', 32, 70);
+        b2Ctx.fillStyle = '#fcee0a';
+        b2Ctx.font = '16px monospace';
+        b2Ctx.fillText('ORBITAL DEFENSE & AERODYNE MOTORS', 32, 110);
+        b2Ctx.fillStyle = '#ff2e88';
+        b2Ctx.fillRect(32, 130, 448, 4);
+        b2Ctx.fillStyle = '#cbd5e1';
+        b2Ctx.font = '14px monospace';
+        b2Ctx.fillText('MIL-SPEC PROPULSION // CLASS-IV INTERCEPTOR', 32, 170);
+        b2Ctx.fillStyle = '#fcee0a';
+        b2Ctx.fillText('STATUS: DEPLOYED AT NIGHT CITY PERIMETER', 32, 205);
+        generatedTextures['decals/corporate_banner_02.png'] = b2Canvas.toDataURL('image/png').split(',')[1];
+      }
+
+      window.GENERATED_TEXTURES = generatedTextures;
+      document.getElementById('status').innerText = 'COMPLETE: ' + Object.keys(generatedTextures).length + ' textures generated. Uploading...';
+      
+      async function uploadAll() {
+        for (const [key, base64] of Object.entries(generatedTextures)) {
+          await fetch('/save_texture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: key, data: base64 })
+          });
+        }
+        document.getElementById('status').innerText = 'ALL TEXTURES SAVED TO DISK SUCCESSFULLY!';
+        await fetch('/done', { method: 'POST' });
+      }
+      uploadAll();
+    }
+
+    generateAll();
+  </script>
+</body>
+</html>

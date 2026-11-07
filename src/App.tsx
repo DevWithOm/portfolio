@@ -1,10 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { QualityTier } from './components/cyberpunk/CyberCityScene';
 
-// Genuinely lazy-loaded 3D Megacity WebGL Scene (Three.js isolated from critical DOM path)
-const CyberCityScene = lazy(() => 
-  import('./components/cyberpunk/CyberCityScene').then(m => ({ default: m.CyberCityScene }))
-);
+import { CyberCityScene } from './components/cyberpunk/CyberCityScene';
 import { CyberTopHUD } from './components/cyberpunk/CyberTopHUD';
 import { CyberHeroOverlay } from './components/cyberpunk/CyberHeroOverlay';
 import { OperatorDossier } from './components/cyberpunk/OperatorDossier';
@@ -57,7 +54,33 @@ export const App: React.FC = () => {
   }, []);
 
   // Scroll Progress Tracking for 3D Camera & Section Spy
-  const [scrollYProgress, setScrollYProgress] = useState<number>(0);
+  const [scrollYProgress, setScrollYProgress] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('scroll');
+      if (p !== null) {
+        const val = parseFloat(p);
+        if (!isNaN(val)) return Math.min(Math.max(val, 0), 1);
+      }
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('scroll');
+      if (p !== null) {
+        const val = parseFloat(p);
+        if (!isNaN(val)) {
+          setTimeout(() => {
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (docHeight > 0) {
+              window.scrollTo({ top: val * docHeight, behavior: 'instant' as ScrollBehavior });
+            }
+          }, 100);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -126,13 +149,11 @@ export const App: React.FC = () => {
       
       {/* 1. Real-time 3D Night City Megacity Scene (Three.js WebGL, Genuinely Lazy Loaded) */}
       <div className="fixed inset-0 w-full h-full pointer-events-none z-0">
-        <Suspense fallback={<div className="absolute inset-0 bg-[#07090D]" />}>
-          <CyberCityScene 
-            scrollYProgress={scrollYProgress}
-            qualityTier={qualityTier}
-            reducedMotion={reducedMotion}
-          />
-        </Suspense>
+        <CyberCityScene 
+          scrollYProgress={scrollYProgress}
+          qualityTier={qualityTier}
+          reducedMotion={reducedMotion}
+        />
         {/* Subtle Vignette & Scanline Overlay */}
         <div 
           className="absolute inset-0 pointer-events-none opacity-40"

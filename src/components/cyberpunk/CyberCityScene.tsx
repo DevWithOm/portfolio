@@ -187,24 +187,37 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
 
     // Secondary localized puddle lobe
     aCtx.beginPath();
-    aCtx.ellipse(280, 420, 140, 80, -0.2, 0, Math.PI * 2);
-    aCtx.fill();
+    // Texture Loader and Base Paths for PBR Assets
+    const texLoader = new THREE.TextureLoader();
+    const basePath = (import.meta as any).env?.BASE_URL || './';
+    const texturesPath = basePath.endsWith('/') ? `${basePath}textures/` : `${basePath}/textures/`;
 
-    // Subtle wet asphalt gradient rim around puddles
-    aCtx.strokeStyle = '#101722';
-    aCtx.lineWidth = 14;
-    aCtx.stroke();
+    // Authentic PBR Asphalt Set (Albedo, Tangent Normal, ORM with organic puddles)
+    const asphaltAlbedo = trackTex(texLoader.load(`${texturesPath}asphalt/asphalt_albedo.png`));
+    asphaltAlbedo.wrapS = THREE.RepeatWrapping;
+    asphaltAlbedo.wrapT = THREE.RepeatWrapping;
+    asphaltAlbedo.repeat.set(4, 3);
 
-    const asphaltTex = trackTex(new THREE.CanvasTexture(asphaltCanvas));
-    asphaltTex.wrapS = THREE.RepeatWrapping;
-    asphaltTex.wrapT = THREE.RepeatWrapping;
-    asphaltTex.repeat.set(2, 2);
+    const asphaltNormal = trackTex(texLoader.load(`${texturesPath}asphalt/asphalt_normal.png`));
+    asphaltNormal.wrapS = THREE.RepeatWrapping;
+    asphaltNormal.wrapT = THREE.RepeatWrapping;
+    asphaltNormal.repeat.set(4, 3);
+
+    const asphaltOrm = trackTex(texLoader.load(`${texturesPath}asphalt/asphalt_orm.png`));
+    asphaltOrm.wrapS = THREE.RepeatWrapping;
+    asphaltOrm.wrapT = THREE.RepeatWrapping;
+    asphaltOrm.repeat.set(4, 3);
 
     const platformMat = trackMat(new THREE.MeshStandardMaterial({
-      color: 0x0B0F17,
-      roughness: 0.38,
-      metalness: 0.55,
-      map: asphaltTex
+      color: 0x1A222D,
+      map: asphaltAlbedo,
+      normalMap: asphaltNormal,
+      normalScale: new THREE.Vector2(1.2, 1.2),
+      roughnessMap: asphaltOrm,
+      roughness: 0.88,
+      metalness: 0.1,
+      aoMap: asphaltOrm,
+      aoMapIntensity: 1.0
     }));
     const platform = new THREE.Mesh(platformGeo, platformMat);
     platform.position.set(0, -0.6, 6);
@@ -226,35 +239,31 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       terraceGroup.add(groundReflector);
     }
 
-    // Parapet Wall & Coping Ledge
+    // Parapet Wall & Coping Ledge (Concrete PBR)
+    const concreteAlbedo = trackTex(texLoader.load(`${texturesPath}concrete/concrete_albedo.png`));
+    concreteAlbedo.wrapS = THREE.RepeatWrapping;
+    concreteAlbedo.wrapT = THREE.RepeatWrapping;
+    concreteAlbedo.repeat.set(4, 1);
+    const concreteNormal = trackTex(texLoader.load(`${texturesPath}concrete/concrete_normal.png`));
+    concreteNormal.wrapS = THREE.RepeatWrapping;
+    concreteNormal.wrapT = THREE.RepeatWrapping;
+    concreteNormal.repeat.set(4, 1);
+
     const parapetGeo = trackGeo(new THREE.BoxGeometry(32, 0.5, 0.9));
     const parapetMat = trackMat(new THREE.MeshStandardMaterial({
-      color: 0x1E293B,
-      roughness: 0.45,
-      metalness: 0.35
+      color: 0x2A323D,
+      map: concreteAlbedo,
+      normalMap: concreteNormal,
+      roughness: 0.85,
+      metalness: 0.05
     }));
     const parapet = new THREE.Mesh(parapetGeo, parapetMat);
     parapet.position.set(0, 0.25, -2.55);
     parapet.receiveShadow = true;
     terraceGroup.add(parapet);
 
-    // Yellow Hazard Caution Stripes along coping
-    const hazardCanvas = document.createElement('canvas');
-    hazardCanvas.width = 512;
-    hazardCanvas.height = 32;
-    const hCtx = hazardCanvas.getContext('2d')!;
-    hCtx.fillStyle = '#0a0a0a';
-    hCtx.fillRect(0, 0, 512, 32);
-    hCtx.fillStyle = '#FCEE0A';
-    for (let s = 0; s < 512; s += 32) {
-      hCtx.beginPath();
-      hCtx.moveTo(s, 0);
-      hCtx.lineTo(s + 16, 0);
-      hCtx.lineTo(s, 32);
-      hCtx.lineTo(s - 16, 32);
-      hCtx.fill();
-    }
-    const hazardTex = trackTex(new THREE.CanvasTexture(hazardCanvas));
+    // Yellow Hazard Caution Stripes along coping (PBR Decal)
+    const hazardTex = trackTex(texLoader.load(`${texturesPath}decals/hazard_stripes.png`));
     hazardTex.wrapS = THREE.RepeatWrapping;
     hazardTex.repeat.set(16, 1);
     const hazardGeo = trackGeo(new THREE.PlaneGeometry(32, 0.22));
@@ -671,9 +680,43 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     s3Bridge.position.set(20.5, 45, -78);
     cityGroup.add(s3Bridge);
 
+    // V4 ARCHITECTURAL VOID ELIMINATION LAYER (From Master Layout & Registry)
+    // MW_01 (Commercial Screen Tower): Placed at center canyon (z = -48.0), completely eliminates central black void
+    const mw01Geo = trackGeo(new THREE.BoxGeometry(24, 56, 20));
+    const mw01Mat = trackMat(new THREE.MeshStandardMaterial({ color: 0x090E17, roughness: 0.45, metalness: 0.8 }));
+    const mw01 = new THREE.Mesh(mw01Geo, mw01Mat);
+    mw01.position.set(0.0, 10.0, -48.0);
+    cityGroup.add(mw01);
+
+    // MW_02 (Industrial Powerplant): Placed at left flank (x = -28.0, z = -42.0), eliminates left-side void
+    const mw02Geo = trackGeo(new THREE.BoxGeometry(22, 48, 26));
+    const mw02Mat = trackMat(new THREE.MeshStandardMaterial({ color: 0x080C14, roughness: 0.65, metalness: 0.5 }));
+    const mw02 = new THREE.Mesh(mw02Geo, mw02Mat);
+    mw02.position.set(-28.0, 10.0, -42.0);
+    cityGroup.add(mw02);
+
+    // MW_03 (Tech Arcology Flank): Placed at right flank (x = +26.0, z = -36.0), eliminates right-side void
+    const mw03Geo = trackGeo(new THREE.BoxGeometry(20, 52, 22));
+    const mw03Mat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0B101C, roughness: 0.35, metalness: 0.85 }));
+    const mw03 = new THREE.Mesh(mw03Geo, mw03Mat);
+    mw03.position.set(26.0, 10.0, -36.0);
+    cityGroup.add(mw03);
+
+    // Structural Skybridges linking towers across urban canyons
+    const sb01Geo = trackGeo(new THREE.BoxGeometry(14, 2.4, 2.8));
+    const sbMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.3, metalness: 0.8 }));
+    const sb01 = new THREE.Mesh(sb01Geo, sbMat);
+    sb01.position.set(-22.0, 22.0, -31.0);
+    cityGroup.add(sb01);
+
+    const sb02Geo = trackGeo(new THREE.BoxGeometry(14, 2.4, 2.8));
+    const sb02 = new THREE.Mesh(sb02Geo, sbMat);
+    sb02.position.set(20.0, 26.0, -26.0);
+    cityGroup.add(sb02);
+
     // 10. True Hardware Window Instancing (THREE.InstancedMesh)
     // Single draw-call for hundreds of illuminated windows across the city!
-    const windowTotalCount = 380;
+    const windowTotalCount = 480;
     const windowGeo = trackGeo(new THREE.PlaneGeometry(0.68, 0.44));
     const windowMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xFFFFFF }));
     const instancedWindows = new THREE.InstancedMesh(windowGeo, windowMat, windowTotalCount);
@@ -691,7 +734,10 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     const towerFacadeBases = [
       { x: 14.5, y: 17, z: -16, w: 11, h: 40, d: 11, rotY: 0 },
       { x: -16.5, y: 26, z: -20, w: 10, h: 32, d: 10, rotY: 0 },
-      { x: 23, y: 15, z: -30, w: 12, h: 44, d: 11, rotY: 0 }
+      { x: 23, y: 15, z: -30, w: 12, h: 44, d: 11, rotY: 0 },
+      { x: 0.0, y: 10, z: -48, w: 22, h: 50, d: 18, rotY: 0 },
+      { x: -28.0, y: 10, z: -42, w: 20, h: 44, d: 24, rotY: 0 },
+      { x: 26.0, y: 10, z: -36, w: 18, h: 48, d: 20, rotY: 0 }
     ];
 
     towerFacadeBases.forEach((b) => {
@@ -1184,7 +1230,6 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     // 14. Asynchronous Authored GLB 3D Asset Loader (Progressive Non-Blocking Enhancement)
     // Loads original binary glTF 2.0 assets asynchronously without blocking critical hero text or CTAs
     const gltfLoader = new GLTFLoader();
-    const basePath = (import.meta as any).env?.BASE_URL || './';
     const modelsPath = basePath.endsWith('/') ? `${basePath}models/` : `${basePath}/models/`;
 
     // A. Hero Vehicle: Authored Aerodyne Tactical Spinner GLB
@@ -1483,6 +1528,18 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       } else if (viewMode === 'rooftop') {
         targetPos = new THREE.Vector3(-4.5, 2.4, 8.5);
         targetLookAt = new THREE.Vector3(-6.5, 1.2, 5.0);
+      } else if (viewMode === 'projects' || viewMode === 'waypoint-3') {
+        targetPos = waypoints[2].pos;
+        targetLookAt = waypoints[2].target;
+      } else if (viewMode === 'skills' || viewMode === 'waypoint-4') {
+        targetPos = waypoints[3].pos;
+        targetLookAt = waypoints[3].target;
+      } else if (viewMode === 'research' || viewMode === 'waypoint-5') {
+        targetPos = waypoints[4].pos;
+        targetLookAt = waypoints[4].target;
+      } else if (viewMode === 'contact' || viewMode === 'waypoint-6') {
+        targetPos = waypoints[5].pos;
+        targetLookAt = waypoints[5].target;
       } else {
         // Camera Scroll Choreography across the 6 Waypoints (Reads mutable ref!)
         const p = Math.min(Math.max(scrollYProgressRef.current, 0), 1);
@@ -1498,8 +1555,13 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
         }
       }
 
-      currentCamPos.lerp(targetPos, 0.06);
-      currentCamTarget.lerp(targetLookAt, 0.06);
+      if (viewMode) {
+        currentCamPos.copy(targetPos);
+        currentCamTarget.copy(targetLookAt);
+      } else {
+        currentCamPos.lerp(targetPos, 0.06);
+        currentCamTarget.lerp(targetLookAt, 0.06);
+      }
 
       camera.position.copy(currentCamPos);
       camera.lookAt(currentCamTarget);
