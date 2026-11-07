@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Night City V4.0 — Spatial Greybox Studio</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #07090D;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      color: #c9d1d9;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(13, 17, 23, 0.90);
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-size: 12px;
+      line-height: 1.5;
+      pointer-events: none;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    }
+    #hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      color: #00E5FF;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .badge-view { background: #238636; color: #fff; }
+    .badge-tier { background: #1f6feb; color: #fff; }
+    .prop-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .prop-val { color: #f0f6fc; font-weight: 600; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/three/build/three.module.js",
+        "three/addons/": "/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="hud">
+    <h1 id="view-title">NIGHT CITY V4.0 SPATIAL GREYBOX</h1>
+    <div id="badges" style="margin-bottom: 8px;"></div>
+    <div id="stats"></div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const params = new URLSearchParams(window.location.search);
+    const viewMode = params.get('view') || 'hero_1440'; // top_down, side_elevation, hero_1440, hero_1280, scene_only, wp1_hero, wp2_dossier, wp3_projects, wp4_skills, wp5_research, wp6_contact
+
+    const container = document.getElementById('canvas-container');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Scene & Fog
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x07090D);
+    scene.fog = new THREE.FogExp2(0x0A0F18, 0.014);
+
+    // Lighting Hierarchy
+    const ambientLight = new THREE.AmbientLight(0x0B1220, 0.55);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xFFF5E6, 2.2);
+    keyLight.position.set(24, 45, 18);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0x00E5FF, 1.6);
+    rimLight.position.set(-25, 20, -35);
+    scene.add(rimLight);
+
+    // Material Library (Greybox Palette)
+    const matConcrete = new THREE.MeshStandardMaterial({ color: 0x1E2530, roughness: 0.75, metalness: 0.15 });
+    const matSteel = new THREE.MeshStandardMaterial({ color: 0x253040, roughness: 0.35, metalness: 0.85 });
+    const matGlass = new THREE.MeshStandardMaterial({ color: 0x0A1826, roughness: 0.08, metalness: 0.95 });
+    const matYellow = new THREE.MeshStandardMaterial({ color: 0xFCEE0A, roughness: 0.40, metalness: 0.10 });
+    const matCyanGlow = new THREE.MeshBasicMaterial({ color: 0x00E5FF });
+    const matMagentaGlow = new THREE.MeshBasicMaterial({ color: 0xFF2E88 });
+    const matRedBeacon = new THREE.MeshBasicMaterial({ color: 0xFF0033 });
+    const matWindowLit = new THREE.MeshBasicMaterial({ color: 0xFFE082 });
+
+    // Ground Plane
+    const groundGeo = new THREE.PlaneGeometry(300, 300);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x05070B, roughness: 0.9, metalness: 0.1 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -6.0;
+    scene.add(ground);
+
+    // 1. NEAR FIELD: Hero Rooftop Platform (Y = 0)
+    const terraceGroup = new THREE.Group();
+    const platformGeo = new THREE.BoxGeometry(32, 0.6, 18);
+    const platformMat = new THREE.MeshStandardMaterial({ color: 0x0D1117, roughness: 0.82, metalness: 0.2 });
+    const platform = new THREE.Mesh(platformGeo, platformMat);
+    platform.position.set(0, -0.3, 6);
+    terraceGroup.add(platform);
+
+    // Parapet Wall & Hazard Coping
+    const parapet = new THREE.Mesh(new THREE.BoxGeometry(32, 0.5, 0.9), matSteel);
+    parapet.position.set(0, 0.25, -2.55);
+    terraceGroup.add(parapet);
+
+    const hazardStrip = new THREE.Mesh(new THREE.BoxGeometry(32, 0.05, 0.92), matYellow);
+    hazardStrip.position.set(0, 0.52, -2.55);
+    terraceGroup.add(hazardStrip);
+
+    // Organic Puddle Mockups (Reflective Dark Pools)
+    const puddleMat = new THREE.MeshStandardMaterial({ color: 0x00E5FF, roughness: 0.05, metalness: 0.9, opacity: 0.4, transparent: true });
+    const puddle1 = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), puddleMat);
+    puddle1.rotation.x = -Math.PI / 2;
+    puddle1.position.set(2.0, 0.02, 5.2);
+    terraceGroup.add(puddle1);
+
+    // Hero Character Silhouette (Seated at (-3.4, 0, 0.4))
+    const charGroup = new THREE.Group();
+    const charBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.8, 0.4), matYellow);
+    charBody.position.y = 0.55;
+    charGroup.add(charBody);
+    const charHelmet = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xDE1A35, roughness: 0.3 }));
+    charHelmet.position.y = 1.1;
+    charGroup.add(charHelmet);
+    const charVisor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.08, 0.1), matCyanGlow);
+    charVisor.position.set(0, 1.1, -0.15);
+    charGroup.add(charVisor);
+    charGroup.position.set(-3.4, 0, 0.4);
+    charGroup.rotation.y = 0.5;
+    terraceGroup.add(charGroup);
+
+    // Rooftop Machinery Cluster
+    const hvac = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.0, 2.4), matSteel);
+    hvac.position.set(-6.5, 1.0, 5.5);
+    terraceGroup.add(hvac);
+
+    const fanMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.1, 16), matCyanGlow);
+    fanMesh.rotation.x = Math.PI / 2;
+    fanMesh.position.set(-6.5, 1.2, 6.72);
+    terraceGroup.add(fanMesh);
+
+    const duct = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 8), matSteel);
+    duct.position.set(-9.5, 0.7, 4);
+    terraceGroup.add(duct);
+
+    scene.add(terraceGroup);
+
+    // 2. MIDGROUND BUILDINGS (All with physical depth & columns)
+    // TOWER 1: Corporate Megatower
+    const t1Group = new THREE.Group();
+    const t1Core = new THREE.Mesh(new THREE.BoxGeometry(11.4, 42.4, 11.4), matConcrete);
+    t1Core.position.y = 21.2;
+    t1Group.add(t1Core);
+    // 4 Corner Steel Columns
+    for (const [cx, cz] of [[-5.7, -5.7], [5.7, -5.7], [-5.7, 5.7], [5.7, 5.7]]) {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(0.85, 42.4, 0.85), matSteel);
+      col.position.set(cx, 21.2, cz);
+      t1Group.add(col);
+    }
+    // Penthouse Crown & Mast
+    const t1Crown = new THREE.Mesh(new THREE.BoxGeometry(7.5, 4.5, 7.5), matSteel);
+    t1Crown.position.y = 44.6;
+    t1Group.add(t1Crown);
+    const t1Mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 8, 8), matSteel);
+    t1Mast.position.y = 50.8;
+    t1Group.add(t1Mast);
+    const t1Beacon = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), matRedBeacon);
+    t1Beacon.position.y = 55.0;
+    t1Group.add(t1Beacon);
+    // Facade Billboard BB_01
+    const bb01 = new THREE.Mesh(new THREE.BoxGeometry(7.0, 5.0, 0.2), matCyanGlow);
+    bb01.position.set(-2.0, 28.0, 5.8);
+    t1Group.add(bb01);
+    t1Group.position.set(14.5, 0, -16);
+    scene.add(t1Group);
+
+    // TOWER 2: Stepped Brutalist Arcology
+    const t2Group = new THREE.Group();
+    const t2B1 = new THREE.Mesh(new THREE.BoxGeometry(13, 18, 13), matConcrete);
+    t2B1.position.y = 9;
+    t2Group.add(t2B1);
+    const t2B2 = new THREE.Mesh(new THREE.BoxGeometry(10, 16, 10), matConcrete);
+    t2B2.position.y = 26;
+    t2Group.add(t2B2);
+    const t2B3 = new THREE.Mesh(new THREE.BoxGeometry(7, 14, 7), matConcrete);
+    t2B3.position.y = 41;
+    t2Group.add(t2B3);
+    // Cantilevered service terraces
+    const cant1 = new THREE.Mesh(new THREE.BoxGeometry(14, 0.8, 4), matSteel);
+    cant1.position.set(0, 18.4, 4);
+    t2Group.add(cant1);
+    t2Group.position.set(-16.5, 0, -20);
+    scene.add(t2Group);
+
+    // TOWER 3: Hexagonal Media Spire
+    const t3Group = new THREE.Group();
+    const t3Core = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.8, 54, 8), matGlass);
+    t3Core.position.y = 27;
+    t3Group.add(t3Core);
+    const t3Ring = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.2, 8, 16), matCyanGlow);
+    t3Ring.rotation.x = Math.PI / 2;
+    t3Ring.position.y = 42;
+    t3Group.add(t3Ring);
+    t3Group.position.set(-9.0, 0, -38);
+    scene.add(t3Group);
+
+    // TOWER 4: Slanted Wedge High-Rise
+    const t4Group = new THREE.Group();
+    const t4Core = new THREE.Mesh(new THREE.BoxGeometry(12, 46, 11), matConcrete);
+    t4Core.position.y = 23;
+    t4Group.add(t4Core);
+    const t4Roof = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 6, 8, 4), matSteel);
+    t4Roof.position.set(0, 50, 0);
+    t4Roof.rotation.y = Math.PI / 4;
+    t4Group.add(t4Roof);
+    t4Group.position.set(23.0, 0, -30);
+    scene.add(t4Group);
+
+    // MW_01: Commercial Screen Tower (Fills the Central Canyon Gap!)
+    const mw01 = new THREE.Mesh(new THREE.BoxGeometry(14, 44, 14), matConcrete);
+    mw01.position.set(-4.5, 16, -48);
+    scene.add(mw01);
+    const bb04 = new THREE.Mesh(new THREE.BoxGeometry(10, 4.5, 0.3), matMagentaGlow);
+    bb04.position.set(-4.5, 36, -40.8);
+    scene.add(bb04);
+
+    // MW_02: Transit Hub Arcology (Fills the Left Canyon Void!)
+    const mw02 = new THREE.Mesh(new THREE.BoxGeometry(16, 52, 16), matConcrete);
+    mw02.position.set(-28.0, 20, -45);
+    scene.add(mw02);
+
+    // MW_03: Industrial Synthesis Plant (Fills the Right Canyon Void!)
+    const mw03 = new THREE.Mesh(new THREE.BoxGeometry(15, 38, 18), matSteel);
+    mw03.position.set(26.0, 13, -48);
+    scene.add(mw03);
+
+    // 3. SKYBRIDGES & TRANSIT INFRASTRUCTURE
+    // Skybridge 01 (Tower 1 to MW_03)
+    const bridge1 = new THREE.Mesh(new THREE.BoxGeometry(14.5, 2.8, 3.2), matSteel);
+    bridge1.position.set(20.0, 32.0, -28.0);
+    scene.add(bridge1);
+
+    // Skybridge 02 (Tower 2 to MW_02)
+    const bridge2 = new THREE.Mesh(new THREE.BoxGeometry(16.0, 2.8, 3.2), matSteel);
+    bridge2.position.set(-22.0, 28.0, -32.0);
+    scene.add(bridge2);
+
+    // Lower Canyon Highway Viaduct
+    const viaduct = new THREE.Mesh(new THREE.BoxGeometry(80, 3.5, 8), matConcrete);
+    viaduct.position.set(18.0, -5.5, -46.0);
+    scene.add(viaduct);
+    const trafficRibbon = new THREE.Mesh(new THREE.PlaneGeometry(80, 0.6), matCyanGlow);
+    trafficRibbon.rotation.x = -Math.PI / 2;
+    trafficRibbon.position.set(18.0, -3.7, -46.0);
+    scene.add(trafficRibbon);
+
+    // 4. FAR SKYLINE PINNACLES & LANDMARKS
+    // SKY_01: Siphon Megatower Pinnacle (Reaching Y = 88m)
+    const s1Geo = new THREE.ConeGeometry(4.2, 88, 6);
+    const s1 = new THREE.Mesh(s1Geo, matSteel);
+    s1.position.set(0, 36, -78);
+    scene.add(s1);
+    const s1Beacon = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), matRedBeacon);
+    s1Beacon.position.set(0, 80.5, -78);
+    scene.add(s1Beacon);
+
+    // SKY_02: Heavy Industrial Skyline Block
+    const s2 = new THREE.Mesh(new THREE.BoxGeometry(18, 65, 18), matConcrete);
+    s2.position.set(-24, 25, -85);
+    scene.add(s2);
+
+    // SKY_03: Twin Needle Spires Complex
+    const s3a = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.5, 74, 6), matSteel);
+    s3a.position.set(18.5, 30, -78);
+    scene.add(s3a);
+    const s3b = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.5, 74, 6), matSteel);
+    s3b.position.set(22.5, 30, -78);
+    scene.add(s3b);
+    const s3Link = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 1.2), matCyanGlow);
+    s3Link.position.set(20.5, 45, -78);
+    scene.add(s3Link);
+
+    // 5. Instanced Facade Windows (Dense Urban Illumination)
+    const winGeo = new THREE.BoxGeometry(0.5, 0.8, 0.1);
+    const winMesh = new THREE.InstancedMesh(winGeo, matWindowLit, 320);
+    const dummy = new THREE.Object3D();
+    let idx = 0;
+    // Windows on Tower 1
+    for (let f = 1; f <= 10; f++) {
+      for (let c = -2; c <= 2; c++) {
+        dummy.position.set(14.5 + c * 2.0, f * 3.8, -10.2);
+        dummy.updateMatrix();
+        winMesh.setMatrixAt(idx++, dummy.matrix);
+      }
+    }
+    // Windows on MW_01
+    for (let f = 1; f <= 8; f++) {
+      for (let c = -2; c <= 2; c++) {
+        dummy.position.set(-4.5 + c * 2.2, f * 4.2, -40.8);
+        dummy.updateMatrix();
+        winMesh.setMatrixAt(idx++, dummy.matrix);
+      }
+    }
+    // Windows on MW_02
+    for (let f = 1; f <= 9; f++) {
+      for (let c = -2; c <= 2; c++) {
+        dummy.position.set(-28.0 + c * 2.5, f * 4.5, -36.8);
+        dummy.updateMatrix();
+        winMesh.setMatrixAt(idx++, dummy.matrix);
+      }
+    }
+    winMesh.instanceMatrix.needsUpdate = true;
+    scene.add(winMesh);
+
+    // 6. Camera Waypoint & Viewport Configuration
+    const camera = new THREE.PerspectiveCamera(52, width / height, 0.1, 350);
+
+    let viewTitle = 'HERO COMPOSITION (1440 × 900)';
+    let tierText = 'CINEMATIC GREYBOX';
+
+    if (viewMode === 'top_down') {
+      camera.position.set(0, 110, -35);
+      camera.lookAt(0, 0, -35);
+      viewTitle = 'TOP-DOWN CITY SPATIAL LAYOUT';
+    } else if (viewMode === 'side_elevation') {
+      camera.position.set(90, 24, -35);
+      camera.lookAt(0, 20, -35);
+      viewTitle = 'EAST-WEST SIDE ELEVATION';
+    } else if (viewMode === 'hero_1280') {
+      camera.position.set(0, 4.2, 14.5);
+      camera.lookAt(0, 1.8, -20);
+      viewTitle = 'LAPTOP HERO COMPOSITION (1280 × 800)';
+    } else if (viewMode === 'scene_only') {
+      camera.position.set(0, 4.2, 14.5);
+      camera.lookAt(0, 1.8, -20);
+      viewTitle = 'SCENE-ONLY URBAN CANYON (UNOBSTRUCTED)';
+    } else if (viewMode === 'wp1_hero') {
+      camera.position.set(0, 4.2, 14.5);
+      camera.lookAt(0, 1.8, -20);
+      viewTitle = 'WAYPOINT 1: HERO ESTABLISHING (CHAPTER 01)';
+    } else if (viewMode === 'wp2_dossier') {
+      camera.position.set(-1.8, 3.2, 10.5);
+      camera.lookAt(-2.0, 1.6, -15);
+      viewTitle = 'WAYPOINT 2: OPERATOR DOSSIER (CHAPTER 02)';
+    } else if (viewMode === 'wp3_projects') {
+      camera.position.set(1.2, 2.2, 7.0);
+      camera.lookAt(0, 1.2, -22);
+      viewTitle = 'WAYPOINT 3: FIXER BOARD (CHAPTER 03)';
+    } else if (viewMode === 'wp4_skills') {
+      camera.position.set(-0.8, 1.6, 4.2);
+      camera.lookAt(0, 1.0, -25);
+      viewTitle = 'WAYPOINT 4: CYBERDECK SKILLS (CHAPTER 04)';
+    } else if (viewMode === 'wp5_research') {
+      camera.position.set(1.8, 1.4, 3.2);
+      camera.lookAt(0, 1.2, -28);
+      viewTitle = 'WAYPOINT 5: NEURAL RESEARCH LAB (CHAPTER 05)';
+    } else if (viewMode === 'wp6_contact') {
+      camera.position.set(0, 1.0, 2.2);
+      camera.lookAt(0, 1.4, -30);
+      viewTitle = 'WAYPOINT 6: NET CONNECT FINALE (CHAPTER 06)';
+    } else {
+      // Default: hero_1440
+      camera.position.set(0, 4.2, 14.5);
+      camera.lookAt(0, 1.8, -20);
+    }
+
+    // Render Once
+    renderer.render(scene, camera);
+
+    // Update HUD
+    document.getElementById('view-title').innerText = viewTitle;
+    document.getElementById('badges').innerHTML = `
+      <span class="badge badge-view">${viewMode.toUpperCase()}</span>
+      <span class="badge badge-tier">${tierText}</span>
+    `;
+    document.getElementById('stats').innerHTML = `
+      <div class="prop-row"><span>Camera Pos:</span><span class="prop-val">${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)}</span></div>
+      <div class="prop-row"><span>FOV / Aspect:</span><span class="prop-val">${camera.fov}° / ${(width/height).toFixed(2)}</span></div>
+      <div class="prop-row"><span>Major Towers:</span><span class="prop-val">4 Midground, 3 Far Skyline</span></div>
+      <div class="prop-row"><span>Infrastructure:</span><span class="prop-val">2 Skybridges, 1 Highway Viaduct</span></div>
+      <div class="prop-row"><span>Instanced Windows:</span><span class="prop-val">${idx} Active Units</span></div>
+      <div class="prop-row"><span>Central Void Gap:</span><span class="prop-val">ELIMINATED (Filled by MW_01)</span></div>
+      <div class="prop-row"><span>Left Flank Void:</span><span class="prop-val">ELIMINATED (Filled by MW_02)</span></div>
+    `;
+
+    document.body.setAttribute('data-rendered', 'true');
+  </script>
+</body>
+</html>
+
