@@ -104,3 +104,4 @@ All surfaces feature distinct material identities calibrated for physically-base
 2. **GLTFLoader Execution:** Authored `.glb` assets load asynchronously in the background. As each model resolves, it seamlessly swaps into the scene hierarchy and disposes of the proxy geometry.
 3. **Memory Management:** Every loaded geometry, material, and texture is tracked in `disposableGeometries`, `disposableMaterials`, and `disposableTextures` for 100% GPU memory reclamation on unmount.
 4. **Reduced Motion Lifecycle:** When `reducedMotion` is enabled, the render loop executes a single static frame (`renderSingleFrame()`) and terminates `requestAnimationFrame` scheduling, preventing unnecessary CPU/GPU power consumption while maintaining full page interactivity.
+

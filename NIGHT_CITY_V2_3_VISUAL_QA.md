@@ -63,3 +63,4 @@
 
 5. **Not Yet Achieved / Intentional Boundaries:**
    - High-density 20MB+ character meshes with complex skeletal bone rigs: omitted to maintain sub-second loading and strict web performance budgets.
+

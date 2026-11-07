@@ -83,3 +83,4 @@
 ## 3. Licensing & Provenance Statement
 
 Every asset declared in this manifest was procedurally compiled and authored using the repository's internal build pipeline (`scripts/build_models.mjs`). No copyrighted assets from *Cyberpunk 2077*, *Edgerunners*, CD Projekt Red, or Studio Trigger were imported, converted, or utilized. All geometries, shaders, materials, and trademarks are 100% original property of Om Vyas.
+

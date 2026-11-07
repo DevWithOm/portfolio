@@ -288,14 +288,19 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     duct.receiveShadow = true;
     terraceGroup.add(duct);
 
-    // HVAC Compressor Unit with Animated Fan
+    // HVAC Compressor Unit with Animated Fan (Structured as Level of Detail - THREE.LOD)
+    const lodMachinery = new THREE.LOD();
+    lodMachinery.position.set(-6.5, 0, 5.5);
+    terraceGroup.add(lodMachinery);
+
+    const hvacProxyGroup = new THREE.Group();
     const hvacGeo = trackGeo(new THREE.BoxGeometry(2.4, 1.8, 2));
     const hvacMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.6, roughness: 0.4 }));
     const hvac = new THREE.Mesh(hvacGeo, hvacMat);
-    hvac.position.set(-6.5, 0.9, 5.5);
+    hvac.position.set(0, 0.9, 0);
     hvac.castShadow = true;
     hvac.receiveShadow = true;
-    terraceGroup.add(hvac);
+    hvacProxyGroup.add(hvac);
 
     // HVAC Rotating Fan
     const fanGroup = new THREE.Group();
@@ -306,8 +311,11 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       blade.rotation.z = (f * Math.PI) / 2;
       fanGroup.add(blade);
     }
-    fanGroup.position.set(-6.5, 1.1, 6.52);
-    terraceGroup.add(fanGroup);
+    fanGroup.position.set(0, 1.1, 1.02);
+    hvacProxyGroup.add(fanGroup);
+
+    // Initial LOD assignment: proxy at distance 0 until authored GLB loads
+    lodMachinery.addLevel(hvacProxyGroup, 0);
 
     // Conduit Pipes
     const pipeGeo = trackGeo(new THREE.CylinderGeometry(0.08, 0.08, 12, 8));
@@ -545,41 +553,67 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     const cityGroup = new THREE.Group();
     const beaconMeshes: THREE.Mesh[] = [];
 
-    // TOWER 1 (Right Hero Monolith Tower): Stepped Facade with Billboard & Setback Crown
+    // TOWER 1 (Right Hero Monolith Tower): Structured as Level of Detail (THREE.LOD)
+    const lodTower1 = new THREE.LOD();
+    lodTower1.position.set(14.5, 0, -16);
+    cityGroup.add(lodTower1);
+
+    const t1ProxyGroup = new THREE.Group();
     const t1Geo = trackGeo(new THREE.BoxGeometry(11, 42, 11));
     const t1Mat = trackMat(new THREE.MeshStandardMaterial({ color: 0x0A0E18, roughness: 0.32, metalness: 0.75 }));
     const t1 = new THREE.Mesh(t1Geo, t1Mat);
-    t1.position.set(14.5, 17, -16);
-    cityGroup.add(t1);
+    t1.position.set(0, 17, 0);
+    t1ProxyGroup.add(t1);
 
     // T1 Setback Penthouse Crown
     const t1PhGeo = trackGeo(new THREE.BoxGeometry(7.5, 4.5, 7.5));
     const t1PhMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x080C14, roughness: 0.4, metalness: 0.8 }));
     const t1Ph = new THREE.Mesh(t1PhGeo, t1PhMat);
-    t1Ph.position.set(14.5, 40.25, -16);
-    cityGroup.add(t1Ph);
+    t1Ph.position.set(0, 40.25, 0);
+    t1ProxyGroup.add(t1Ph);
 
     // T1 Antenna Mast & Strobe Beacon
     const t1Mast = new THREE.Mesh(trackGeo(new THREE.CylinderGeometry(0.08, 0.16, 8, 8)), trackMat(new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 })));
-    t1Mast.position.set(14.5, 46.5, -16);
-    cityGroup.add(t1Mast);
+    t1Mast.position.set(0, 46.5, 0);
+    t1ProxyGroup.add(t1Mast);
+
     const t1Beacon = new THREE.Mesh(trackGeo(new THREE.SphereGeometry(0.25, 8, 8)), trackMat(new THREE.MeshBasicMaterial({ color: 0xFF0033 })));
     t1Beacon.position.set(14.5, 50.6, -16);
     cityGroup.add(t1Beacon);
     beaconMeshes.push(t1Beacon);
 
-    // TOWER 2 (Left Stepped Arcology Tower): 3-Tier Stepped Pyramidal Skyscraper
+    // Far-distance simplified monolithic low-poly proxy (1 draw call)
+    const t1FarProxy = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(11, 48, 11)), trackMat(new THREE.MeshStandardMaterial({ color: 0x0A0E18, roughness: 0.7, metalness: 0.3 })));
+    t1FarProxy.position.set(0, 24, 0);
+
+    // Initial LOD: mid-proxy at level 0 until authored GLB loads, far proxy at 90m+
+    lodTower1.addLevel(t1ProxyGroup, 0);
+    lodTower1.addLevel(t1FarProxy, 90);
+
+    // TOWER 2 (Left Stepped Arcology Tower): Structured as Level of Detail (THREE.LOD)
+    const lodTower2 = new THREE.LOD();
+    lodTower2.position.set(-16.5, 0, -20);
+    cityGroup.add(lodTower2);
+
+    const t2ProxyGroup = new THREE.Group();
     const t2Base = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(13, 20, 13)), trackMat(new THREE.MeshStandardMaterial({ color: 0x080B12, roughness: 0.65, metalness: 0.5 })));
-    t2Base.position.set(-16.5, 8, -20);
-    cityGroup.add(t2Base);
+    t2Base.position.set(0, 8, 0);
+    t2ProxyGroup.add(t2Base);
 
     const t2Mid = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(10, 16, 10)), trackMat(new THREE.MeshStandardMaterial({ color: 0x07090F, roughness: 0.55, metalness: 0.6 })));
-    t2Mid.position.set(-16.5, 26, -20);
-    cityGroup.add(t2Mid);
+    t2Mid.position.set(0, 26, 0);
+    t2ProxyGroup.add(t2Mid);
 
     const t2Top = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(7, 12, 7)), trackMat(new THREE.MeshStandardMaterial({ color: 0x05070B, roughness: 0.45, metalness: 0.7 })));
-    t2Top.position.set(-16.5, 40, -20);
-    cityGroup.add(t2Top);
+    t2Top.position.set(0, 40, 0);
+    t2ProxyGroup.add(t2Top);
+
+    // Far-distance simplified arcology proxy
+    const t2FarProxy = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(13, 46, 13)), trackMat(new THREE.MeshStandardMaterial({ color: 0x080B12, roughness: 0.8, metalness: 0.2 })));
+    t2FarProxy.position.set(0, 23, 0);
+
+    lodTower2.addLevel(t2ProxyGroup, 0);
+    lodTower2.addLevel(t2FarProxy, 90);
 
     // TOWER 3 (Hexagonal Corporate Spire): 8-Sided Cylinder/Prism Tower
     const t3Geo = trackGeo(new THREE.CylinderGeometry(5.2, 5.8, 54, 8));
@@ -1220,8 +1254,10 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
           m.receiveShadow = true;
         }
       });
-      authoredMachinery.position.set(-6.5, 0, 4.5);
-      terraceGroup.add(authoredMachinery);
+      // Genuine THREE.LOD Level Assignment: High-poly authored GLB at 0-24m, proxy beyond 24m
+      (lodMachinery as any).levels = [];
+      lodMachinery.addLevel(authoredMachinery, 0);
+      lodMachinery.addLevel(hvacProxyGroup, 24);
       if (reducedMotion) renderSingleFrame();
     }, undefined, (err) => {
       console.warn('Asynchronous GLB load fallback for rooftop machinery:', err);
@@ -1240,12 +1276,11 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
           m.receiveShadow = true;
         }
       });
-      authoredTower1.position.set(14.5, 0, -16);
-      cityGroup.add(authoredTower1);
-      // Hide proxy basic boxes
-      t1.visible = false;
-      t1Ph.visible = false;
-      t1Mast.visible = false;
+      // Genuine THREE.LOD Level Assignment: High-poly authored GLB (0-45m), Mid-poly proxy (45-90m), Far proxy (90m+)
+      (lodTower1 as any).levels = [];
+      lodTower1.addLevel(authoredTower1, 0);
+      lodTower1.addLevel(t1ProxyGroup, 45);
+      lodTower1.addLevel(t1FarProxy, 90);
       if (reducedMotion) renderSingleFrame();
     }, undefined, (err) => {
       console.warn('Asynchronous GLB load fallback for Tower 1:', err);
@@ -1264,12 +1299,11 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
           m.receiveShadow = true;
         }
       });
-      authoredTower2.position.set(-16.5, 0, -20);
-      cityGroup.add(authoredTower2);
-      // Hide proxy basic boxes
-      t2Base.visible = false;
-      t2Mid.visible = false;
-      t2Top.visible = false;
+      // Genuine THREE.LOD Level Assignment: High-poly authored GLB (0-45m), Mid-poly proxy (45-90m), Far proxy (90m+)
+      (lodTower2 as any).levels = [];
+      lodTower2.addLevel(authoredTower2, 0);
+      lodTower2.addLevel(t2ProxyGroup, 45);
+      lodTower2.addLevel(t2FarProxy, 90);
       if (reducedMotion) renderSingleFrame();
     }, undefined, (err) => {
       console.warn('Asynchronous GLB load fallback for Tower 2:', err);
@@ -1327,10 +1361,32 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Single static frame renderer for zero-overhead reduced motion lifecycle
+    // Single static frame renderer for zero-overhead reduced motion lifecycle & presets
     const renderSingleFrame = () => {
-      camera.position.copy(waypoints[0].pos);
-      camera.lookAt(waypoints[0].target);
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const viewMode = urlParams?.get('view');
+      if (viewMode === 'character') {
+        camera.position.set(-3.4, 1.35, 0.4);
+        camera.lookAt(new THREE.Vector3(-4.8, 0.95, -2.4));
+      } else if (viewMode === 'architecture') {
+        camera.position.set(7.0, 18.0, 3.5);
+        camera.lookAt(new THREE.Vector3(14.5, 19.0, -14.0));
+      } else if (viewMode === 'vehicle') {
+        camera.position.set(9.5, 7.8, -14.0);
+        camera.lookAt(new THREE.Vector3(11.5, 7.5, -18.0));
+      } else if (viewMode === 'wet-surface') {
+        camera.position.set(0, 0.65, 3.2);
+        camera.lookAt(new THREE.Vector3(0, 0.05, -1.0));
+      } else if (viewMode === 'rooftop') {
+        camera.position.set(-4.5, 2.4, 8.5);
+        camera.lookAt(new THREE.Vector3(-6.5, 1.2, 5.0));
+      } else {
+        camera.position.copy(waypoints[0].pos);
+        camera.lookAt(waypoints[0].target);
+      }
+      lodTower1.update(camera);
+      lodTower2.update(camera);
+      lodMachinery.update(camera);
       if (composer && qualityTier !== 'performance') {
         composer.render();
       } else {
@@ -1424,6 +1480,9 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       } else if (viewMode === 'wet-surface') {
         targetPos = new THREE.Vector3(0, 0.65, 3.2);
         targetLookAt = new THREE.Vector3(0, 0.05, -1.0);
+      } else if (viewMode === 'rooftop') {
+        targetPos = new THREE.Vector3(-4.5, 2.4, 8.5);
+        targetLookAt = new THREE.Vector3(-6.5, 1.2, 5.0);
       } else {
         // Camera Scroll Choreography across the 6 Waypoints (Reads mutable ref!)
         const p = Math.min(Math.max(scrollYProgressRef.current, 0), 1);
@@ -1444,6 +1503,11 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
 
       camera.position.copy(currentCamPos);
       camera.lookAt(currentCamTarget);
+
+      // Update Genuine Distance-Based Level of Detail (THREE.LOD)
+      lodTower1.update(camera);
+      lodTower2.update(camera);
+      lodMachinery.update(camera);
 
       // Render via Post-Processing Composer (Cinematic/Balanced) or direct WebGL (Performance)
       if (composer && qualityTier !== 'performance') {

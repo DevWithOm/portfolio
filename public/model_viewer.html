@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Independent GLB Asset Studio Viewer</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0d1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      color: #c9d1d9;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(13, 17, 23, 0.88);
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      pointer-events: none;
+      max-width: 380px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    #hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #58a6ff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .badge-pbr { background: #1f6feb; color: #fff; }
+    .badge-view { background: #238636; color: #fff; }
+    .prop-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .prop-val { color: #f0f6fc; font-weight: 500; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/three/build/three.module.js",
+        "three/addons/": "/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="hud">
+    <h1 id="model-title">Loading GLB...</h1>
+    <div id="badges" style="margin-bottom: 8px;"></div>
+    <div id="stats"></div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const modelKey = params.get('model') || 'cyber_operative';
+    const viewType = params.get('view') || 'three_quarter'; // front, side, three_quarter, wireframe, closeup
+    const modelFile = modelKey.endsWith('.glb') ? modelKey : `${modelKey}.glb`;
+
+    const container = document.getElementById('canvas-container');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0e14);
+
+    // Neutral 3-point studio lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.2);
+    keyLight.position.set(6, 10, 8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xddeeff, 0.85);
+    fillLight.position.set(-8, 5, 4);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0x00E5FF, 1.6);
+    rimLight.position.set(0, 6, -9);
+    scene.add(rimLight);
+
+    // Studio ground shadow plane & subtle grid
+    const floorGeo = new THREE.PlaneGeometry(80, 80);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.4 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(40, 40, 0x30363d, 0x161b22);
+    grid.position.y = -0.001;
+    scene.add(grid);
+
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 200);
+
+    const loader = new GLTFLoader();
+    const url = `./models/${modelFile}`;
+
+    let totalTriangles = 0;
+    let totalVertices = 0;
+    let meshCount = 0;
+    let materialCount = 0;
+    let textureCount = 0;
+    const materialNames = [];
+
+    loader.load(url, (gltf) => {
+      const model = gltf.scene;
+
+      // Analysis & wireframe override if requested
+      const matSet = new Set();
+      model.traverse((child) => {
+        if (child.isMesh) {
+          meshCount++;
+          child.castShadow = true;
+          child.receiveShadow = true;
+          const geo = child.geometry;
+          if (geo.index) {
+            totalTriangles += geo.index.count / 3;
+          } else if (geo.attributes.position) {
+            totalTriangles += geo.attributes.position.count / 3;
+          }
+          if (geo.attributes.position) {
+            totalVertices += geo.attributes.position.count;
+          }
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((m) => {
+            if (m) {
+              matSet.add(m);
+              if (m.name && !materialNames.includes(m.name)) materialNames.push(m.name);
+              if (m.map) textureCount++;
+              if (m.normalMap) textureCount++;
+              if (m.roughnessMap) textureCount++;
+              if (m.metalnessMap) textureCount++;
+              if (m.emissiveMap) textureCount++;
+              if (m.aoMap) textureCount++;
+              if (viewType === 'wireframe') {
+                m.wireframe = true;
+              }
+            }
+          });
+        }
+      });
+      materialCount = matSet.size;
+
+      // Compute bounding box & dimensions
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      // Center model at origin on top of floor
+      model.position.x = -center.x;
+      model.position.y = -box.min.y;
+      model.position.z = -center.z;
+      scene.add(model);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const dist = maxDim * 1.85;
+
+      // Configure viewpoint
+      const target = new THREE.Vector3(0, size.y * 0.5, 0);
+
+      if (viewType === 'front') {
+        camera.position.set(0, size.y * 0.5, dist);
+      } else if (viewType === 'side') {
+        camera.position.set(dist, size.y * 0.5, 0);
+      } else if (viewType === 'wireframe' || viewType === 'three_quarter') {
+        camera.position.set(dist * 0.72, size.y * 0.75 + dist * 0.35, dist * 0.72);
+      } else if (viewType === 'closeup') {
+        // Close-up on hero detail
+        if (modelKey.includes('operative')) {
+          camera.position.set(0.2, size.y * 0.78, 0.7);
+          target.set(0, size.y * 0.8, 0);
+        } else if (modelKey.includes('spinner')) {
+          camera.position.set(0.6, size.y * 0.65, 1.2);
+          target.set(0, size.y * 0.4, 0.3);
+        } else if (modelKey.includes('skyscraper')) {
+          camera.position.set(3.5, size.y * 0.6, 4.5);
+          target.set(1.5, size.y * 0.55, 0);
+        } else if (modelKey.includes('machinery')) {
+          camera.position.set(1.1, size.y * 0.6, 1.4);
+          target.set(0, size.y * 0.45, 0);
+        } else {
+          camera.position.set(dist * 0.35, size.y * 0.7, dist * 0.35);
+          target.set(0, size.y * 0.65, 0);
+        }
+      }
+
+      camera.lookAt(target);
+
+      // Update HUD
+      document.getElementById('model-title').innerText = modelFile;
+      document.getElementById('badges').innerHTML = `
+        <span class="badge badge-view">${viewType.toUpperCase()} VIEW</span>
+        <span class="badge badge-pbr">GLTF 2.0 BINARY</span>
+      `;
+      document.getElementById('stats').innerHTML = `
+        <div class="prop-row"><span>Meshes:</span><span class="prop-val">${meshCount}</span></div>
+        <div class="prop-row"><span>Triangles:</span><span class="prop-val">${Math.round(totalTriangles).toLocaleString()}</span></div>
+        <div class="prop-row"><span>Vertices:</span><span class="prop-val">${totalVertices.toLocaleString()}</span></div>
+        <div class="prop-row"><span>Materials:</span><span class="prop-val">${materialCount}</span></div>
+        <div class="prop-row"><span>Textures:</span><span class="prop-val">${textureCount}</span></div>
+        <div class="prop-row"><span>Dimensions:</span><span class="prop-val">${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)} m</span></div>
+        <div class="prop-row"><span>PBR Shading:</span><span class="prop-val">MeshStandardMaterial</span></div>
+      `;
+
+      // Render
+      renderer.render(scene, camera);
+      document.body.setAttribute('data-rendered', 'true');
+      window.__INSPECTION_DATA__ = {
+        modelFile,
+        viewType,
+        meshCount,
+        totalTriangles: Math.round(totalTriangles),
+        totalVertices,
+        materialCount,
+        textureCount,
+        dimensions: [size.x, size.y, size.z],
+        materialNames
+      };
+    }, undefined, (err) => {
+      console.error('Error loading GLB:', err);
+      document.getElementById('model-title').innerText = 'ERROR LOADING GLB';
+      document.body.setAttribute('data-rendered', 'error');
+    });
+
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>
