@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export type QualityTier = 'cinematic' | 'balanced' | 'performance';
 
@@ -1146,6 +1147,134 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
     const steamPoints = new THREE.Points(steamGeo, steamMat);
     scene.add(steamPoints);
 
+    // 14. Asynchronous Authored GLB 3D Asset Loader (Progressive Non-Blocking Enhancement)
+    // Loads original binary glTF 2.0 assets asynchronously without blocking critical hero text or CTAs
+    const gltfLoader = new GLTFLoader();
+    const basePath = (import.meta as any).env?.BASE_URL || './';
+    const modelsPath = basePath.endsWith('/') ? `${basePath}models/` : `${basePath}/models/`;
+
+    // A. Hero Vehicle: Authored Aerodyne Tactical Spinner GLB
+    gltfLoader.load(`${modelsPath}aerodyne_spinner.glb`, (gltf) => {
+      const authoredModel = gltf.scene;
+      authoredModel.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          trackGeo(m.geometry);
+          if (Array.isArray(m.material)) m.material.forEach(trackMat);
+          else trackMat(m.material);
+          m.castShadow = true;
+        }
+      });
+      // Replace procedural spinner on even vehicles
+      vehicles.forEach((veh, idx) => {
+        if (idx % 2 === 0) {
+          while (veh.mesh.children.length > 0) {
+            veh.mesh.remove(veh.mesh.children[0]);
+          }
+          const clone = authoredModel.clone();
+          veh.mesh.add(clone);
+          const trail = new THREE.Mesh(trackGeo(new THREE.PlaneGeometry(1.2, 7.5)), trackMat(new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.35, side: THREE.DoubleSide })));
+          trail.rotation.x = Math.PI / 2;
+          trail.position.set(0, 0, 5.4);
+          veh.mesh.add(trail);
+        }
+      });
+      if (reducedMotion) renderSingleFrame();
+    }, undefined, (err) => {
+      console.warn('Asynchronous GLB load fallback for vehicle:', err);
+    });
+
+    // B. Hero Cyber-Netrunner Operative GLB
+    gltfLoader.load(`${modelsPath}cyber_operative.glb`, (gltf) => {
+      const authoredOperative = gltf.scene;
+      authoredOperative.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          trackGeo(m.geometry);
+          if (Array.isArray(m.material)) m.material.forEach(trackMat);
+          else trackMat(m.material);
+          m.castShadow = true;
+        }
+      });
+      // Swap out proxy operative with high-poly authored operative
+      while (operativeGroup.children.length > 0) {
+        operativeGroup.remove(operativeGroup.children[0]);
+      }
+      operativeGroup.add(authoredOperative);
+      operativeGroup.add(crestMesh); // Preserves original Hex-Core crest on back
+      if (reducedMotion) renderSingleFrame();
+    }, undefined, (err) => {
+      console.warn('Asynchronous GLB load fallback for operative:', err);
+    });
+
+    // C. Rooftop Mechanical Equipment GLB
+    gltfLoader.load(`${modelsPath}rooftop_machinery.glb`, (gltf) => {
+      const authoredMachinery = gltf.scene;
+      authoredMachinery.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          trackGeo(m.geometry);
+          if (Array.isArray(m.material)) m.material.forEach(trackMat);
+          else trackMat(m.material);
+          m.castShadow = true;
+          m.receiveShadow = true;
+        }
+      });
+      authoredMachinery.position.set(-6.5, 0, 4.5);
+      terraceGroup.add(authoredMachinery);
+      if (reducedMotion) renderSingleFrame();
+    }, undefined, (err) => {
+      console.warn('Asynchronous GLB load fallback for rooftop machinery:', err);
+    });
+
+    // D. Corporate Skyscraper Tower 1 Complex GLB
+    gltfLoader.load(`${modelsPath}corporate_skyscraper.glb`, (gltf) => {
+      const authoredTower1 = gltf.scene;
+      authoredTower1.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          trackGeo(m.geometry);
+          if (Array.isArray(m.material)) m.material.forEach(trackMat);
+          else trackMat(m.material);
+          m.castShadow = true;
+          m.receiveShadow = true;
+        }
+      });
+      authoredTower1.position.set(14.5, 0, -16);
+      cityGroup.add(authoredTower1);
+      // Hide proxy basic boxes
+      t1.visible = false;
+      t1Ph.visible = false;
+      t1Mast.visible = false;
+      if (reducedMotion) renderSingleFrame();
+    }, undefined, (err) => {
+      console.warn('Asynchronous GLB load fallback for Tower 1:', err);
+    });
+
+    // E. Secondary Brutalist Arcology Tower 2 GLB
+    gltfLoader.load(`${modelsPath}secondary_arcology.glb`, (gltf) => {
+      const authoredTower2 = gltf.scene;
+      authoredTower2.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const m = child as THREE.Mesh;
+          trackGeo(m.geometry);
+          if (Array.isArray(m.material)) m.material.forEach(trackMat);
+          else trackMat(m.material);
+          m.castShadow = true;
+          m.receiveShadow = true;
+        }
+      });
+      authoredTower2.position.set(-16.5, 0, -20);
+      cityGroup.add(authoredTower2);
+      // Hide proxy basic boxes
+      t2Base.visible = false;
+      t2Mid.visible = false;
+      t2Top.visible = false;
+      if (reducedMotion) renderSingleFrame();
+    }, undefined, (err) => {
+      console.warn('Asynchronous GLB load fallback for Tower 2:', err);
+    });
+
     // 15. Six Cinematic Camera Waypoints for Chapter Storytelling
     const waypoints = [
       { progress: 0.0, pos: new THREE.Vector3(0, 4.2, 14.5), target: new THREE.Vector3(0, 1.8, -20) },      // Chapter 01: Home / Hero
@@ -1170,6 +1299,9 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       if (composer) {
         composer.setSize(w, h);
       }
+      if (reducedMotion) {
+        renderSingleFrame();
+      }
     };
     window.addEventListener('resize', handleResize);
 
@@ -1186,81 +1318,94 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
         }
       } else {
         lastTime = performance.now();
-        if (animFrameId === null) {
+        if (!reducedMotion && animFrameId === null) {
           animFrameId = requestAnimationFrame(animate);
+        } else if (reducedMotion) {
+          renderSingleFrame();
         }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Single static frame renderer for zero-overhead reduced motion lifecycle
+    const renderSingleFrame = () => {
+      camera.position.copy(waypoints[0].pos);
+      camera.lookAt(waypoints[0].target);
+      if (composer && qualityTier !== 'performance') {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
+    };
+
     // 17. The 60 FPS Render & Animation Loop
     const animate = (currentTime: number) => {
+      if (reducedMotion) return;
+
       animFrameId = requestAnimationFrame(animate);
 
       const delta = Math.min((currentTime - lastTime) * 0.001, 0.1);
       lastTime = currentTime;
       beaconTime += delta;
 
-      if (!reducedMotion) {
-        // Animate Directional Rain Streaks
-        const rPos = rainGeo.attributes.position.array as Float32Array;
-        for (let i = 0; i < rainCount; i++) {
-          const dy = rainVelocities[i] * delta;
-          const dx = dy * 0.15;
-          rPos[i * 6] -= dx;
-          rPos[i * 6 + 1] -= dy;
-          rPos[i * 6 + 3] -= dx;
-          rPos[i * 6 + 4] -= dy;
+      // Animate Directional Rain Streaks
+      const rPos = rainGeo.attributes.position.array as Float32Array;
+      for (let i = 0; i < rainCount; i++) {
+        const dy = rainVelocities[i] * delta;
+        const dx = dy * 0.15;
+        rPos[i * 6] -= dx;
+        rPos[i * 6 + 1] -= dy;
+        rPos[i * 6 + 3] -= dx;
+        rPos[i * 6 + 4] -= dy;
 
-          if (rPos[i * 6 + 1] < 0) {
-            let rx = (Math.random() - 0.5) * 48;
-            let rz = (Math.random() - 0.5) * 52;
-            if (rz > 5 && rx > -7 && rx < 2) {
-              rx += rx > -2.5 ? 4.5 : -4.5;
-            }
-            const streakLen = 0.55 + Math.random() * 0.45;
-            rPos[i * 6] = rx;
-            rPos[i * 6 + 1] = 28 + Math.random() * 4;
-            rPos[i * 6 + 2] = rz;
-            rPos[i * 6 + 3] = rx - 0.12;
-            rPos[i * 6 + 4] = rPos[i * 6 + 1] - streakLen;
-            rPos[i * 6 + 5] = rz + 0.04;
+        if (rPos[i * 6 + 1] < 0) {
+          let rx = (Math.random() - 0.5) * 48;
+          let rz = (Math.random() - 0.5) * 52;
+          if (rz > 5 && rx > -7 && rx < 2) {
+            rx += rx > -2.5 ? 4.5 : -4.5;
           }
+          const streakLen = 0.55 + Math.random() * 0.45;
+          rPos[i * 6] = rx;
+          rPos[i * 6 + 1] = 28 + Math.random() * 4;
+          rPos[i * 6 + 2] = rz;
+          rPos[i * 6 + 3] = rx - 0.12;
+          rPos[i * 6 + 4] = rPos[i * 6 + 1] - streakLen;
+          rPos[i * 6 + 5] = rz + 0.04;
         }
-        rainGeo.attributes.position.needsUpdate = true;
-
-        // Animate Flying AVs with Delta-Time Physics!
-        vehicles.forEach((veh) => {
-          veh.mesh.position.z += veh.speed * delta;
-          if (veh.mesh.position.z > veh.startZ) {
-            veh.mesh.position.z = veh.startZ - veh.rangeZ;
-          }
-        });
-
-        // Animate Highway Traffic Light Ribbons in Lower Canyon
-        trafficTex.offset.x = (trafficTex.offset.x + delta * 0.4) % 1;
-
-        // Animate HVAC Cooling Fan
-        fanGroup.rotation.z += delta * 6.5;
-
-        // Animate Rising Steam
-        const sPos = steamGeo.attributes.position.array as Float32Array;
-        for (let i = 0; i < steamCount; i++) {
-          sPos[i * 3 + 1] += 0.85 * delta;
-          if (sPos[i * 3 + 1] > 4.5) {
-            sPos[i * 3 + 1] = 1.4;
-          }
-        }
-        steamGeo.attributes.position.needsUpdate = true;
-
-        // Asynchronous Strobe Aviation Hazard Beacons
-        const beaconPulse = Math.sin(beaconTime * 4.2) > 0.4 ? 1.0 : 0.08;
-        beaconMeshes.forEach((b) => {
-          (b.material as THREE.MeshBasicMaterial).color.setHex(beaconPulse > 0.5 ? 0xFF0033 : 0x2A0005);
-        });
       }
+      rainGeo.attributes.position.needsUpdate = true;
 
-      // Check inspection view mode presets (?view=character, ?view=architecture, ?view=wet-surface)
+      // Animate Flying AVs with Delta-Time Physics!
+      vehicles.forEach((veh) => {
+        veh.mesh.position.z += veh.speed * delta;
+        if (veh.mesh.position.z > veh.startZ) {
+          veh.mesh.position.z = veh.startZ - veh.rangeZ;
+        }
+      });
+
+      // Animate Highway Traffic Light Ribbons in Lower Canyon
+      trafficTex.offset.x = (trafficTex.offset.x + delta * 0.4) % 1;
+
+      // Animate HVAC Cooling Fan
+      fanGroup.rotation.z += delta * 6.5;
+
+      // Animate Rising Steam
+      const sPos = steamGeo.attributes.position.array as Float32Array;
+      for (let i = 0; i < steamCount; i++) {
+        sPos[i * 3 + 1] += 0.85 * delta;
+        if (sPos[i * 3 + 1] > 4.5) {
+          sPos[i * 3 + 1] = 1.4;
+        }
+      }
+      steamGeo.attributes.position.needsUpdate = true;
+
+      // Asynchronous Strobe Aviation Hazard Beacons
+      const beaconPulse = Math.sin(beaconTime * 4.2) > 0.4 ? 1.0 : 0.08;
+      beaconMeshes.forEach((b) => {
+        (b.material as THREE.MeshBasicMaterial).color.setHex(beaconPulse > 0.5 ? 0xFF0033 : 0x2A0005);
+      });
+
+      // Check inspection view mode presets (?view=character, ?view=architecture, ?view=wet-surface, ?view=vehicle)
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const viewMode = urlParams?.get('view');
 
@@ -1273,13 +1418,12 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       } else if (viewMode === 'architecture') {
         targetPos = new THREE.Vector3(7.0, 18.0, 3.5);
         targetLookAt = new THREE.Vector3(14.5, 19.0, -14.0);
+      } else if (viewMode === 'vehicle') {
+        targetPos = new THREE.Vector3(9.5, 7.8, -14.0);
+        targetLookAt = new THREE.Vector3(11.5, 7.5, -18.0);
       } else if (viewMode === 'wet-surface') {
         targetPos = new THREE.Vector3(0, 0.65, 3.2);
         targetLookAt = new THREE.Vector3(0, 0.05, -1.0);
-      } else if (reducedMotion) {
-        // Freeze camera to locked hero composition
-        targetPos = waypoints[0].pos;
-        targetLookAt = waypoints[0].target;
       } else {
         // Camera Scroll Choreography across the 6 Waypoints (Reads mutable ref!)
         const p = Math.min(Math.max(scrollYProgressRef.current, 0), 1);
@@ -1309,7 +1453,12 @@ export const CyberCityScene: React.FC<CyberCitySceneProps> = ({
       }
     };
 
-    animFrameId = requestAnimationFrame(animate);
+    // Reduced Motion Lifecycle: Render once without scheduling recurring animation frames
+    if (reducedMotion) {
+      renderSingleFrame();
+    } else {
+      animFrameId = requestAnimationFrame(animate);
+    }
 
     // 18. Comprehensive Resource Disposal
     return () => {
